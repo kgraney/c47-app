@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:gitlab.com)",
+      "WebSearch",
+      "WebFetch(domain:47calc.com)",
+      "WebFetch(domain:c47calculator.wordpress.com)",
+      "WebFetch(domain:c47-calculator.weebly.com)"
+    ]
+  }
+}

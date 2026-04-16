@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/calc_outer_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_calc_body"
+        android:layout_margin="8dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="14dp">
+
+        <!-- ===== HEADER ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="SwissMicros"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-condensed" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="R47"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="normal" />
+        </LinearLayout>
+
+        <!-- ===== DISPLAY ===== -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_display_frame"
+            android:padding="4dp">
+
+            <com.kevingraney.c47.CalculatorDisplayView
+                android:layout_width="match_parent"
+                android:layout_height="200dp" />
+        </FrameLayout>
+
+        <!-- ===== KEYBOARD AREA ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="10dp">
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SOFTKEY ROW (6 blank top buttons)               -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_softkey" android:text="" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_softkey" android:text="" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_softkey" android:text="" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_softkey" android:text="" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_softkey" android:text="" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_softkey" android:text="" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 1 (orange italic)              -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="i\u2192R" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="i\u25CB\u2192P" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="x!\u00B7ms" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="\u02E3\u221Ay\u00B7d" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="10\u02E3\u2192I" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="e\u02E3 #" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 1: x², √x, 1/x, yˣ, LOG, LN -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="x\u00B2" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u221Ax" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="1/x" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="y\u02E3" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="LOG" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="LN" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 2 (blue italic)                -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="|x| \u25B3" android:textColor="@color/calc_shift_blue" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="% \u0394%" android:textColor="@color/calc_shift_blue" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="\u03C0 R\u2191" android:textColor="@color/calc_shift_blue" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="USER ASN" android:textColor="@color/calc_shift_blue" android:textSize="6sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="HOME" android:textColor="@color/calc_shift_blue" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CUST" android:textColor="@color/calc_shift_blue" android:textSize="7sp" android:textStyle="italic" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 2: STO, RCL, R↓, DRG, [ORANGE], [BLUE] -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="STO" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="RCL" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="R\u2193" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="DRG" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_orange" android:text="" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_blue" android:text="" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 3 (orange + boxed style)       -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="COMPLEX CPX" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="LASTx STK" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="DISP TRG" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="PFX EXP" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="\u21A9" android:textColor="@color/calc_shift_orange" android:textSize="9sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CLR" android:textColor="@color/calc_text_white" android:textSize="7sp" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 3: ENTER (wide), x↔y, CHS, EEX, ← -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="ENTER" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="x\u2194y" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="CHS" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="EEX" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u2190" android:textColor="@color/white" android:textSize="16sp" android:textStyle="bold" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 4                              -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="\u03B1  GTO" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="SIN ASIN" android:textColor="@color/calc_text_white" android:textSize="6sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="COS ACOS" android:textColor="@color/calc_text_white" android:textSize="6sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="TAN ATAN" android:textColor="@color/calc_text_white" android:textSize="6sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="STAT PLOT" android:textColor="@color/calc_shift_orange" android:textSize="6sp" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 4: XEQ, 7, 8, 9, ÷ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="XEQ" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="7" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="8" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="9" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u00F7" android:textColor="@color/white" android:textSize="17sp" android:textStyle="bold" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 5                              -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="\u2261\u2191 REGS" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="BASE BITS" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="INTS REAL" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="MATX X.FN" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="EQN ADV" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 5: ↑, 4, 5, 6, × -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u2191" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="4" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="5" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="6" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u00D7" android:textColor="@color/white" android:textSize="17sp" android:textStyle="bold" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 6                              -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="\u2261\u2193 FLGS" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="PREF KEYS" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CONV CLK" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="FLAG \u03B1.FN" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="PROB FIN" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 6: ↓, 1, 2, 3, − -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u2193" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="1" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="2" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="3" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u2212" android:textColor="@color/white" android:textSize="17sp" android:textStyle="bold" android:padding="0dp" />
+            </LinearLayout>
+
+            <!-- ─────────────────────────────────────────────── -->
+            <!-- SHIFT LABELS ROW 7                              -->
+            <!-- ─────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="14dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="\u23FB INFO" android:textColor="@color/calc_shift_orange" android:textSize="7sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="VIEW I/O" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="SHOW ab/c" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="PRGM P.FN" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CAT CNST" android:textColor="@color/calc_shift_orange" android:textSize="5.5sp" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- BUTTON ROW 7: EXIT, 0, ·, R/S, + -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal">
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="EXIT" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="0" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="\u00B7" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="R/S" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" android:padding="0dp" />
+                <Button android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:background="@drawable/bg_button_normal" android:text="+" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold" android:padding="0dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+        <!-- End keyboard -->
+
+    </LinearLayout>
+</ScrollView>
