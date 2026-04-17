@@ -1,26 +1,43 @@
 package com.kevingraney.c47
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
-import com.kevingraney.c47.engine.C47Engine
+import com.kevingraney.c47.engine.CalculatorViewModel
 
 class MainActivity : AppCompatActivity() {
 
-    private val engine = C47Engine()
+    private lateinit var vm: CalculatorViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        engine.init(filesDir)
-        Log.i("c47", "C47Engine loaded; libc47.so linked. Engine bodies are stubs until Phase 2.")
+        vm = CalculatorViewModel().also { it.init(filesDir) }
 
         setContent {
             MaterialTheme {
-                CalculatorScreen()
+                CalculatorScreen(vm)
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        vm.start()
+    }
+
+    override fun onStop() {
+        vm.stop()
+        super.onStop()
+    }
+
+    override fun onPause() {
+        vm.save()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        vm.shutdown()
+        super.onDestroy()
     }
 }

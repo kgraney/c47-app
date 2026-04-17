@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
+import com.kevingraney.c47.engine.CalculatorViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Palette
@@ -65,7 +66,10 @@ enum class BtnVariant { Normal, Softkey, Orange, Blue }
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun CalculatorScreen() {
+fun CalculatorScreen(@Suppress("UNUSED_PARAMETER") vm: CalculatorViewModel? = null) {
+    // Phase 2: VM is accepted but not yet consumed by Key composables (Phase 3)
+    // or by the display (Phase 4). Holding the parameter here makes the call
+    // site stable so those phases can wire individual pieces without churn.
     Box(
         modifier = Modifier
             .fillMaxSize()
