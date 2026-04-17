@@ -1,0 +1,505 @@
+package com.kevingraney.c47
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.*
+import androidx.compose.ui.viewinterop.AndroidView
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Palette
+// ─────────────────────────────────────────────────────────────────────────────
+
+private val OuterBg        = Color(0xFF080808)
+private val BodyBg         = Color(0xFF1C1C1C)
+private val DisplayFrameBg = Color(0xFF0E0E0E)
+
+private val BtnFaceTop     = Color(0xFF3E3E3E)
+private val BtnFaceBot     = Color(0xFF252525)
+private val BtnDepth       = Color(0xFF0D0D0D)
+
+private val BtnSkFaceTop   = Color(0xFF272727)
+private val BtnSkFaceBot   = Color(0xFF181818)
+private val BtnSkDepth     = Color(0xFF070707)
+
+private val BtnOrgFaceTop  = Color(0xFFE88A26)
+private val BtnOrgFaceBot  = Color(0xFFAF5C00)
+private val BtnOrgDepth    = Color(0xFF703700)
+
+private val BtnBluFaceTop  = Color(0xFF4E8AE4)
+private val BtnBluFaceBot  = Color(0xFF2A5AB6)
+private val BtnBluDepth    = Color(0xFF143470)
+
+private val LabelWhite     = Color(0xFFFFFFFF)
+private val ShiftOrange    = Color(0xFFFF9A28)
+private val ShiftBlue      = Color(0xFF82AAFF)
+private val CornerChar     = Color(0xFF787878)
+private val BoxBorder      = Color(0xFFFF9028)
+private val BoxBorderBlue  = Color(0xFF82AAFF)
+
+enum class BtnVariant { Normal, Softkey, Orange, Blue }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Root screen
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun CalculatorScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(OuterBg),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(BodyBg)
+                .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp)
+        ) {
+            CalcHeader()
+            Spacer(Modifier.height(4.dp))
+            CalcDisplay()
+            Spacer(Modifier.height(10.dp))
+            CalcKeyboard()
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CalcHeader() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(34.dp)
+            .padding(horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            "SwissMicros",
+            color = LabelWhite,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            "R47",
+            color = LabelWhite,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Normal
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Display  (reuses the custom-View canvas drawing)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CalcDisplay() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(210.dp)
+            .background(DisplayFrameBg, RoundedCornerShape(3.dp))
+            .padding(4.dp)
+    ) {
+        AndroidView(
+            factory = { ctx -> CalculatorDisplayView(ctx) },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full keyboard
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CalcKeyboard() {
+    Column(Modifier.fillMaxWidth()) {
+
+        // ── Softkey row ──────────────────────────────────────────────────────
+        BtnRow(height = 32.dp) {
+            repeat(6) { Key("", v = BtnVariant.Softkey) }
+        }
+
+        // ── Row 1 ─ x², √x, 1/x, yˣ, LOG, LN ────────────────────────────
+        SRow {
+            SC("i \u2192R",    ShiftOrange, italic = true)
+            SC("i\u2080\u2192P", ShiftOrange, italic = true)
+            SC("x!\u00B7ms", ShiftOrange, italic = true)
+            SC("\u02E3\u221Ay\u00B7d", ShiftOrange, italic = true)
+            SC("10\u02E3\u2192I", ShiftOrange, italic = true)
+            SC("e\u02E3 #",   ShiftOrange, italic = true)
+        }
+        BtnRow {
+            Key("x\u00B2",  corner = "A")
+            Key("\u221Ax",   corner = "B")
+            Key("1/x",       corner = "C")
+            Key("y\u02E3",   corner = "D")
+            Key("LOG",       corner = "E")
+            Key("LN",        corner = "F")
+        }
+
+        // ── Row 2 ─ STO, RCL, R↓, DRG, [orange], [blue] ─────────────────
+        SRow {
+            SC("|x| \u25B3", ShiftBlue, italic = true)
+            SC("% \u0394%",  ShiftBlue, italic = true)
+            SC("\u03C0 R\u2191", ShiftBlue, italic = true)
+            SC("USER ASN",   ShiftBlue, italic = true, fsize = 6)
+            SC("HOME",       ShiftBlue, italic = true)
+            SC("CUST",       ShiftBlue, italic = true)
+        }
+        BtnRow {
+            Key("STO",       corner = "G")
+            Key("RCL",       corner = "H")
+            Key("R\u2193",   corner = "I")
+            Key("DRG",       corner = "J")
+            Key("",          v = BtnVariant.Orange)
+            Key("",          v = BtnVariant.Blue)
+        }
+
+        // ── COMPLEX/ENTER row ─────────────────────────────────────────────
+        SRow {
+            SMC(w = 1f) { MixT("COMPLEX ", ShiftOrange); BoxT("CPX") }
+            SMC(w = 1f) { MixT("LASTx ", ShiftOrange); BoxT("STK") }
+            SMC(w = 1f) { BoxT("DISP TRG") }
+            SMC(w = 1f) { BoxT("PFX EXP") }
+            SC("\u21A9",     ShiftOrange, fsize = 10, w = 1f)
+            SC("CLR",        LabelWhite,  fsize = 7,  w = 1f)
+        }
+        BtnRow {
+            Key("ENTER",     w = 2f, fsize = 13.sp)
+            Key("x\u21C6y",  corner = "K", w = 1f, fsize = 12.sp)
+            Key("CHS",       corner = "L", w = 1f)
+            Key("EEX",       corner = "M", w = 1f)
+            Key("\u2190",    w = 1f, fsize = 17.sp)
+        }
+
+        // ── α/GTO row ─────────────────────────────────────────────────────
+        SRow {
+            SMC(w = 2f) { BoxTFilled("\u03B1"); MixT(" GTO", LabelWhite) }
+            SC("SIN ASIN",  LabelWhite, fsize = 6, w = 1f)
+            SC("COS ACOS",  LabelWhite, fsize = 6, w = 1f)
+            SC("TAN ATAN",  LabelWhite, fsize = 6, w = 1f)
+            SMC(w = 1f) { BoxT("STAT PLOT") }
+        }
+        BtnRow {
+            Key("XEQ",       w = 2f)
+            Key("7",         corner = "N", w = 1f, fsize = 17.sp)
+            Key("8",         corner = "O", w = 1f, fsize = 17.sp)
+            Key("9",         corner = "P", w = 1f, fsize = 17.sp)
+            Key("\u00F7",    corner = "Q", w = 1f, fsize = 18.sp)
+        }
+
+        // ── ≡↑/REGS row ───────────────────────────────────────────────────
+        SRow {
+            SMC(w = 2f) { MixT("\u2261\u2191 ", ShiftOrange); MixT("REGS", LabelWhite) }
+            SMC(w = 1f) { BoxT("BASE BITS") }
+            SMC(w = 1f) { BoxT("INTS REAL") }
+            SMC(w = 1f) { BoxT("MATX X.FN") }
+            SMC(w = 1f) { BoxT("EQN ADV") }
+        }
+        BtnRow {
+            Key("\u2191",    w = 2f, fsize = 20.sp)
+            Key("4",         corner = "R", w = 1f, fsize = 17.sp)
+            Key("5",         corner = "S", w = 1f, fsize = 17.sp)
+            Key("6",         corner = "T", w = 1f, fsize = 17.sp)
+            Key("\u00D7",    corner = "U", w = 1f, fsize = 18.sp)
+        }
+
+        // ── ≡↓/FLGS row ───────────────────────────────────────────────────
+        SRow {
+            SMC(w = 2f) { MixT("\u2261\u2193 ", ShiftOrange); MixT("FLGS", LabelWhite) }
+            SMC(w = 1f) { BoxT("PREF KEYS") }
+            SMC(w = 1f) { BoxT("CONV CLK") }
+            SMC(w = 1f) { BoxT("FLAG \u03B1.FN") }
+            SMC(w = 1f) { BoxT("PROB FIN") }
+        }
+        BtnRow {
+            Key("\u2193",    w = 2f, fsize = 20.sp)
+            Key("1",         corner = "V", w = 1f, fsize = 17.sp)
+            Key("2",         corner = "W", w = 1f, fsize = 17.sp)
+            Key("3",         corner = "X", w = 1f, fsize = 17.sp)
+            Key("\u2212",    corner = "Y", w = 1f, fsize = 18.sp)
+        }
+
+        // ── EXIT row ──────────────────────────────────────────────────────
+        SRow {
+            SMC(w = 2f) { MixT("\u23FB ", ShiftOrange); BoxT("INFO") }
+            SMC(w = 1f) { MixT("VIEW ", LabelWhite); BoxT("I/O") }
+            SMC(w = 1f) { MixT("SHOW ", LabelWhite); BoxT("ab/c") }
+            SMC(w = 1f) { MixT("PRGM ", LabelWhite); BoxT("P.FN") }
+            SMC(w = 1f) { BoxT("CAT CNST") }
+        }
+        BtnRow {
+            Key("EXIT",      w = 2f)
+            Key("0",         corner = "Z",  w = 1f, fsize = 17.sp)
+            Key("\u00B7",    corner = ",",  w = 1f, fsize = 22.sp)
+            Key("R/S",       corner = "?",  w = 1f, fsize = 12.sp)
+            Key("+",         corner = "L",  w = 1f, fsize = 19.sp)
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Layout helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Horizontal row for buttons. */
+@Composable
+private fun BtnRow(height: Dp = 44.dp, content: @Composable RowScope.() -> Unit) {
+    Row(Modifier.fillMaxWidth().height(height), content = content)
+}
+
+/** Horizontal row for shift labels. */
+@Composable
+private fun SRow(content: @Composable RowScope.() -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().height(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Calculator key  (3-D raised bevel)
+// ─────────────────────────────────────────────────────────────────────────────
+
+private val DEPTH_PX_FRACTION = 0.14f   // fraction of button height that is "depth"
+private val CORNER_DP = 6f
+
+@Composable
+private fun RowScope.Key(
+    label: String,
+    corner: String = "",
+    w: Float = 1f,
+    v: BtnVariant = BtnVariant.Normal,
+    fsize: TextUnit = 13.sp
+) {
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+
+    val (fTop, fBot, depth) = when (v) {
+        BtnVariant.Normal  -> Triple(BtnFaceTop,    BtnFaceBot,    BtnDepth)
+        BtnVariant.Softkey -> Triple(BtnSkFaceTop,  BtnSkFaceBot,  BtnSkDepth)
+        BtnVariant.Orange  -> Triple(BtnOrgFaceTop, BtnOrgFaceBot, BtnOrgDepth)
+        BtnVariant.Blue    -> Triple(BtnBluFaceTop, BtnBluFaceBot, BtnBluDepth)
+    }
+
+    Box(
+        modifier = Modifier
+            .weight(w)
+            .fillMaxHeight()
+            .padding(horizontal = 2.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(CORNER_DP.dp))
+            .clickable(interactionSource = src, indication = null) {},
+        contentAlignment = Alignment.Center
+    ) {
+        // ── Canvas: depth shadow + gradient face + highlight ───────────────
+        Canvas(Modifier.fillMaxSize()) {
+            val cr   = CornerRadius(CORNER_DP.dp.toPx())
+            val dH   = size.height * DEPTH_PX_FRACTION
+            val faceY = if (pressed) dH else 0f
+            val faceH = size.height - dH
+
+            // 1. Depth / side-wall layer  (only when not pressed)
+            if (!pressed) {
+                drawRoundRect(
+                    color = depth,
+                    topLeft = Offset(0f, dH * 0.55f),
+                    size = Size(size.width, size.height - dH * 0.55f),
+                    cornerRadius = cr
+                )
+            }
+
+            // 2. Button face with vertical gradient
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(fTop, fBot),
+                    startY = faceY,
+                    endY   = faceY + faceH
+                ),
+                topLeft = Offset(0f, faceY),
+                size = Size(size.width, faceH),
+                cornerRadius = cr
+            )
+
+            // 3. Specular highlight line along top edge
+            if (!pressed) {
+                drawLine(
+                    color = Color.White.copy(alpha = 0.18f),
+                    start = Offset(CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
+                    end   = Offset(size.width - CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
+                    strokeWidth = 1.8f
+                )
+            }
+
+            // 4. Very subtle bottom-edge darkening on the face
+            drawRoundRect(
+                color = Color.Black.copy(alpha = if (pressed) 0.0f else 0.25f),
+                topLeft = Offset(0f, faceY + faceH * 0.65f),
+                size = Size(size.width, faceH * 0.35f),
+                cornerRadius = cr
+            )
+        }
+
+        // ── Label text ────────────────────────────────────────────────────
+        val textYOffset = if (pressed)
+            (DEPTH_PX_FRACTION * 22 * 0.5f).dp   // sink down with the face
+        else
+            -(DEPTH_PX_FRACTION * 44 * 0.5f).dp  // float up on raised face
+
+        Text(
+            text = label,
+            modifier = Modifier
+                .offset(y = textYOffset)
+                .padding(horizontal = 3.dp),
+            color = LabelWhite,
+            fontSize = fsize,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Clip
+        )
+
+        // ── Corner letter ─────────────────────────────────────────────────
+        if (corner.isNotEmpty()) {
+            val cornerY = if (pressed) 1.dp else 7.dp
+            Text(
+                text = corner,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 4.dp, bottom = cornerY),
+                color = CornerChar,
+                fontSize = 7.sp,
+                fontWeight = FontWeight.Normal,
+                lineHeight = 8.sp
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shift-label primitives
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Simple single-color shift label cell. */
+@Composable
+private fun RowScope.SC(
+    text: String,
+    color: Color = ShiftOrange,
+    italic: Boolean = false,
+    w: Float = 1f,
+    fsize: Int = 7
+) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .weight(w)
+            .fillMaxHeight()
+            .wrapContentHeight(Alignment.CenterVertically),
+        color = color,
+        fontSize = fsize.sp,
+        fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+/** Mixed-content shift label cell (can hold BoxT, MixT, etc.). */
+@Composable
+private fun RowScope.SMC(
+    w: Float = 1f,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .weight(w)
+            .fillMaxHeight(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) { content() }
+}
+
+/** Inline text fragment inside a SMC cell. */
+@Composable
+private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false) {
+    Text(
+        text = text,
+        color = color,
+        fontSize = 6.5.sp,
+        fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+        fontWeight = FontWeight.Medium,
+        maxLines = 1
+    )
+}
+
+/** Orange-bordered box label. */
+@Composable
+private fun RowScope.BoxT(text: String) {
+    Box(
+        modifier = Modifier
+            .border(0.8.dp, BoxBorder, RoundedCornerShape(2.dp))
+            .padding(horizontal = 1.5.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = BoxBorder,
+            fontSize = 5.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            lineHeight = 8.sp
+        )
+    }
+}
+
+/** Filled orange box label (e.g. α). */
+@Composable
+private fun RowScope.BoxTFilled(text: String) {
+    Box(
+        modifier = Modifier
+            .background(BoxBorder, RoundedCornerShape(2.dp))
+            .padding(horizontal = 2.5.dp, vertical = 0.5.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = Color.Black,
+            fontSize = 7.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
+    }
+}
