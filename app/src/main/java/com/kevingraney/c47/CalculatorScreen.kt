@@ -3,8 +3,9 @@ package com.kevingraney.c47
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
 import com.kevingraney.c47.engine.CalculatorViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Palette
@@ -66,10 +70,7 @@ enum class BtnVariant { Normal, Softkey, Orange, Blue }
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun CalculatorScreen(@Suppress("UNUSED_PARAMETER") vm: CalculatorViewModel? = null) {
-    // Phase 2: VM is accepted but not yet consumed by Key composables (Phase 3)
-    // or by the display (Phase 4). Holding the parameter here makes the call
-    // site stable so those phases can wire individual pieces without churn.
+fun CalculatorScreen(vm: CalculatorViewModel? = null) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -89,7 +90,7 @@ fun CalculatorScreen(@Suppress("UNUSED_PARAMETER") vm: CalculatorViewModel? = nu
             Spacer(Modifier.height(4.dp))
             CalcDisplay()
             Spacer(Modifier.height(10.dp))
-            CalcKeyboard()
+            CalcKeyboard(vm)
         }
     }
 }
@@ -148,12 +149,18 @@ private fun CalcDisplay() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CalcKeyboard() {
+private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
+    val onDown: (String) -> Unit = { vm?.onKeyDown(it) }
+    val onUp:   (String) -> Unit = { vm?.onKeyUp(it) }
+
     Column(Modifier.fillMaxWidth()) {
 
         // ── Softkey row ──────────────────────────────────────────────────────
         BtnRow(height = 32.dp) {
-            repeat(6) { Key("", v = BtnVariant.Softkey) }
+            for (c in 1..6) {
+                Key("", v = BtnVariant.Softkey,
+                    keyCode = "0$c", onKeyDown = onDown, onKeyUp = onUp)
+            }
         }
 
         // ── Row 1 ─ x², √x, 1/x, yˣ, LOG, LN ────────────────────────────
@@ -166,12 +173,12 @@ private fun CalcKeyboard() {
             SC("e\u02E3 #",   ShiftOrange, italic = true)
         }
         BtnRow {
-            Key("x\u00B2",  corner = "A")
-            Key("\u221Ax",   corner = "B")
-            Key("1/x",       corner = "C")
-            Key("y\u02E3",   corner = "D")
-            Key("LOG",       corner = "E")
-            Key("LN",        corner = "F")
+            Key("x\u00B2",  corner = "A", keyCode = "11", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u221Ax",   corner = "B", keyCode = "12", onKeyDown = onDown, onKeyUp = onUp)
+            Key("1/x",       corner = "C", keyCode = "13", onKeyDown = onDown, onKeyUp = onUp)
+            Key("y\u02E3",   corner = "D", keyCode = "14", onKeyDown = onDown, onKeyUp = onUp)
+            Key("LOG",       corner = "E", keyCode = "15", onKeyDown = onDown, onKeyUp = onUp)
+            Key("LN",        corner = "F", keyCode = "16", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── Row 2 ─ STO, RCL, R↓, DRG, [orange], [blue] ─────────────────
@@ -184,12 +191,12 @@ private fun CalcKeyboard() {
             SC("CUST",       ShiftBlue, italic = true)
         }
         BtnRow {
-            Key("STO",       corner = "G")
-            Key("RCL",       corner = "H")
-            Key("R\u2193",   corner = "I")
-            Key("DRG",       corner = "J")
-            Key("",          v = BtnVariant.Orange)
-            Key("",          v = BtnVariant.Blue)
+            Key("STO",       corner = "G", keyCode = "21", onKeyDown = onDown, onKeyUp = onUp)
+            Key("RCL",       corner = "H", keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
+            Key("R\u2193",   corner = "I", keyCode = "23", onKeyDown = onDown, onKeyUp = onUp)
+            Key("DRG",       corner = "J", keyCode = "24", onKeyDown = onDown, onKeyUp = onUp)
+            Key("",          v = BtnVariant.Orange, keyCode = "25", onKeyDown = onDown, onKeyUp = onUp)
+            Key("",          v = BtnVariant.Blue,   keyCode = "26", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── COMPLEX/ENTER row ─────────────────────────────────────────────
@@ -202,11 +209,11 @@ private fun CalcKeyboard() {
             SMC(w = 1f) { BoxT("CLR") }
         }
         BtnRow {
-            Key("ENTER",     w = 2f, fsize = 16.sp)
-            Key("x\u21C4y",  corner = "K", w = 1f, fsize = 12.sp)
-            Key("CHS",       corner = "L", w = 1f, fsize = 14.sp)
-            Key("EEX",       corner = "M", w = 1f, fsize = 14.sp)
-            Key("\u2190",    w = 1f, fsize = 20.sp)
+            Key("ENTER",     w = 2f, fsize = 16.sp, keyCode = "31", onKeyDown = onDown, onKeyUp = onUp)
+            Key("x\u21C4y",  corner = "K", w = 1f, fsize = 12.sp, keyCode = "32", onKeyDown = onDown, onKeyUp = onUp)
+            Key("CHS",       corner = "L", w = 1f, fsize = 14.sp, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
+            Key("EEX",       corner = "M", w = 1f, fsize = 14.sp, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2190",    w = 1f, fsize = 20.sp, keyCode = "35", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── α/GTO row ─────────────────────────────────────────────────────
@@ -218,11 +225,11 @@ private fun CalcKeyboard() {
             SMC(w = 1f) { BoxT2("STAT", "PLOT") }
         }
         BtnRow {
-            Key("XEQ",       w = 2f, fsize = 16.sp)
-            Key("7",         corner = "N", w = 1f, fsize = 18.sp)
-            Key("8",         corner = "O", w = 1f, fsize = 18.sp)
-            Key("9",         corner = "P", w = 1f, fsize = 18.sp)
-            Key("\u00F7",    corner = "Q", w = 1f, fsize = 20.sp)
+            Key("XEQ",       w = 2f, fsize = 16.sp, keyCode = "41", onKeyDown = onDown, onKeyUp = onUp)
+            Key("7",         corner = "N", w = 1f, fsize = 18.sp, keyCode = "42", onKeyDown = onDown, onKeyUp = onUp)
+            Key("8",         corner = "O", w = 1f, fsize = 18.sp, keyCode = "43", onKeyDown = onDown, onKeyUp = onUp)
+            Key("9",         corner = "P", w = 1f, fsize = 18.sp, keyCode = "44", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00F7",    corner = "Q", w = 1f, fsize = 20.sp, keyCode = "45", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── ≡↑/REGS row ───────────────────────────────────────────────────
@@ -234,11 +241,11 @@ private fun CalcKeyboard() {
             SMC(w = 1f) { BoxT2("EQN", "ADV") }
         }
         BtnRow {
-            Key("\u2191",    w = 2f, fsize = 22.sp)
-            Key("4",         corner = "R", w = 1f, fsize = 18.sp)
-            Key("5",         corner = "S", w = 1f, fsize = 18.sp)
-            Key("6",         corner = "T", w = 1f, fsize = 18.sp)
-            Key("\u00D7",    corner = "U", w = 1f, fsize = 20.sp)
+            Key("\u2191",    w = 2f, fsize = 22.sp, keyCode = "51", onKeyDown = onDown, onKeyUp = onUp)
+            Key("4",         corner = "R", w = 1f, fsize = 18.sp, keyCode = "52", onKeyDown = onDown, onKeyUp = onUp)
+            Key("5",         corner = "S", w = 1f, fsize = 18.sp, keyCode = "53", onKeyDown = onDown, onKeyUp = onUp)
+            Key("6",         corner = "T", w = 1f, fsize = 18.sp, keyCode = "54", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00D7",    corner = "U", w = 1f, fsize = 20.sp, keyCode = "55", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── ≡↓/FLGS row ───────────────────────────────────────────────────
@@ -250,11 +257,11 @@ private fun CalcKeyboard() {
             SMC(w = 1f) { BoxT2("PROB", "FIN") }
         }
         BtnRow {
-            Key("\u2193",    w = 2f, fsize = 22.sp)
-            Key("1",         corner = "V", w = 1f, fsize = 18.sp)
-            Key("2",         corner = "W", w = 1f, fsize = 18.sp)
-            Key("3",         corner = "X", w = 1f, fsize = 18.sp)
-            Key("\u2212",    corner = "Y", w = 1f, fsize = 20.sp)
+            Key("\u2193",    w = 2f, fsize = 22.sp, keyCode = "61", onKeyDown = onDown, onKeyUp = onUp)
+            Key("1",         corner = "V", w = 1f, fsize = 18.sp, keyCode = "62", onKeyDown = onDown, onKeyUp = onUp)
+            Key("2",         corner = "W", w = 1f, fsize = 18.sp, keyCode = "63", onKeyDown = onDown, onKeyUp = onUp)
+            Key("3",         corner = "X", w = 1f, fsize = 18.sp, keyCode = "64", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2212",    corner = "Y", w = 1f, fsize = 20.sp, keyCode = "65", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── EXIT row ──────────────────────────────────────────────────────
@@ -266,11 +273,11 @@ private fun CalcKeyboard() {
             SMC(w = 1f) { BoxT2("CAT", "CNST") }
         }
         BtnRow {
-            Key("EXIT",      w = 2f, fsize = 16.sp)
-            Key("0",         corner = "Z",  w = 1f, fsize = 18.sp)
-            Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp)
-            Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp)
-            Key("+",         corner = "\u23CE", w = 1f, fsize = 20.sp)
+            Key("EXIT",      w = 2f, fsize = 16.sp, keyCode = "71", onKeyDown = onDown, onKeyUp = onUp)
+            Key("0",         corner = "Z",  w = 1f, fsize = 18.sp, keyCode = "72", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp, keyCode = "73", onKeyDown = onDown, onKeyUp = onUp)
+            Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp, keyCode = "74", onKeyDown = onDown, onKeyUp = onUp)
+            Key("+",         corner = "\u23CE", w = 1f, fsize = 20.sp, keyCode = "75", onKeyDown = onDown, onKeyUp = onUp)
         }
     }
 }
@@ -308,10 +315,14 @@ private fun RowScope.Key(
     corner: String = "",
     w: Float = 1f,
     v: BtnVariant = BtnVariant.Normal,
-    fsize: TextUnit = 13.sp
+    fsize: TextUnit = 13.sp,
+    keyCode: String? = null,
+    onKeyDown: ((String) -> Unit)? = null,
+    onKeyUp: ((String) -> Unit)? = null,
 ) {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
+    val scope = rememberCoroutineScope()
 
     val (fTop, fBot, depth) = when (v) {
         BtnVariant.Normal  -> Triple(BtnFaceTop,    BtnFaceBot,    BtnDepth)
@@ -327,13 +338,27 @@ private fun RowScope.Key(
             .weight(w)
             .fillMaxHeight()
     ) {
-        // Inner clickable clipped button face
+        // Inner pressable clipped button face. pointerInput + detectTapGestures
+        // gives us distinct down/up callbacks (the engine needs both — see
+        // keyboard.c ST_1_PRESS1 long-press state machine) while we still drive
+        // `src` so the 3-D press animation works.
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 2.dp, vertical = 2.dp)
                 .clip(RoundedCornerShape(CORNER_DP.dp))
-                .clickable(interactionSource = src, indication = null) {},
+                .pointerInput(keyCode, onKeyDown, onKeyUp) {
+                    detectTapGestures(
+                        onPress = { offset ->
+                            val press = PressInteraction.Press(offset)
+                            src.emitPress(scope, press)
+                            keyCode?.let { onKeyDown?.invoke(it) }
+                            val released = tryAwaitRelease()
+                            keyCode?.let { onKeyUp?.invoke(it) }
+                            src.emitRelease(scope, press, released)
+                        }
+                    )
+                },
             contentAlignment = Alignment.Center
         ) {
             // ── Canvas: depth shadow + gradient face + highlight ───────────
@@ -560,6 +585,29 @@ private fun RowScope.SMix2(orange: String, blue: String, w: Float = 1f) {
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InteractionSource emit helpers — detectTapGestures runs on a PointerInput
+// scope, which is a coroutine but not a CoroutineScope; bridge via the
+// composable's rememberCoroutineScope so the press animation fires.
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun MutableInteractionSource.emitPress(
+    scope: CoroutineScope,
+    press: PressInteraction.Press,
+) {
+    scope.launch { emit(press) }
+}
+
+private fun MutableInteractionSource.emitRelease(
+    scope: CoroutineScope,
+    press: PressInteraction.Press,
+    released: Boolean,
+) {
+    scope.launch {
+        emit(if (released) PressInteraction.Release(press) else PressInteraction.Cancel(press))
     }
 }
 
