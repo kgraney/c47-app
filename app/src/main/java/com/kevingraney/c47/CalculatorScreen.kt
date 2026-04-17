@@ -192,65 +192,65 @@ private fun CalcKeyboard() {
         SRow {
             SMC(w = 1f) { MixT("COMPLEX ", ShiftOrange); BoxT("CPX") }
             SMC(w = 1f) { MixT("LASTx ", ShiftOrange); BoxT("STK") }
-            SMC(w = 1f) { BoxT("DISP TRG") }
-            SMC(w = 1f) { BoxT("PFX EXP") }
+            SMC(w = 1f) { BoxT2("DISP", "TRG") }
+            SMC(w = 1f) { BoxT2("PFX", "EXP") }
             SC("\u21A9",     ShiftOrange, fsize = 10, w = 1f)
-            SC("CLR",        LabelWhite,  fsize = 7,  w = 1f)
+            SMC(w = 1f) { BoxT("CLR") }
         }
         BtnRow {
-            Key("ENTER",     w = 2f, fsize = 13.sp)
-            Key("x\u21C6y",  corner = "K", w = 1f, fsize = 12.sp)
-            Key("CHS",       corner = "L", w = 1f)
-            Key("EEX",       corner = "M", w = 1f)
-            Key("\u2190",    w = 1f, fsize = 17.sp)
+            Key("ENTER",     w = 2f, fsize = 16.sp)
+            Key("x\u21C4y",  corner = "K", w = 1f, fsize = 12.sp)
+            Key("CHS",       corner = "L", w = 1f, fsize = 14.sp)
+            Key("EEX",       corner = "M", w = 1f, fsize = 14.sp)
+            Key("\u2190",    w = 1f, fsize = 20.sp)
         }
 
         // ── α/GTO row ─────────────────────────────────────────────────────
         SRow {
             SMC(w = 2f) { BoxTFilled("\u03B1"); MixT(" GTO", LabelWhite) }
-            SC("SIN ASIN",  LabelWhite, fsize = 6, w = 1f)
-            SC("COS ACOS",  LabelWhite, fsize = 6, w = 1f)
-            SC("TAN ATAN",  LabelWhite, fsize = 6, w = 1f)
-            SMC(w = 1f) { BoxT("STAT PLOT") }
+            SMix2("SIN", "ASIN", w = 1f)
+            SMix2("COS", "ACOS", w = 1f)
+            SMix2("TAN", "ATAN", w = 1f)
+            SMC(w = 1f) { BoxT2("STAT", "PLOT") }
         }
         BtnRow {
-            Key("XEQ",       w = 2f)
-            Key("7",         corner = "N", w = 1f, fsize = 17.sp)
-            Key("8",         corner = "O", w = 1f, fsize = 17.sp)
-            Key("9",         corner = "P", w = 1f, fsize = 17.sp)
-            Key("\u00F7",    corner = "Q", w = 1f, fsize = 18.sp)
+            Key("XEQ",       w = 2f, fsize = 16.sp)
+            Key("7",         corner = "N", w = 1f, fsize = 18.sp)
+            Key("8",         corner = "O", w = 1f, fsize = 18.sp)
+            Key("9",         corner = "P", w = 1f, fsize = 18.sp)
+            Key("\u00F7",    corner = "Q", w = 1f, fsize = 20.sp)
         }
 
         // ── ≡↑/REGS row ───────────────────────────────────────────────────
         SRow {
             SMC(w = 2f) { MixT("\u2261\u2191 ", ShiftOrange); MixT("REGS", LabelWhite) }
-            SMC(w = 1f) { BoxT("BASE BITS") }
-            SMC(w = 1f) { BoxT("INTS REAL") }
-            SMC(w = 1f) { BoxT("MATX X.FN") }
-            SMC(w = 1f) { BoxT("EQN ADV") }
+            SMC(w = 1f) { BoxT2("BASE", "BITS") }
+            SMC(w = 1f) { BoxT2("INTS", "REAL") }
+            SMC(w = 1f) { BoxT2("MATX", "X.FN") }
+            SMC(w = 1f) { BoxT2("EQN", "ADV") }
         }
         BtnRow {
-            Key("\u2191",    w = 2f, fsize = 20.sp)
-            Key("4",         corner = "R", w = 1f, fsize = 17.sp)
-            Key("5",         corner = "S", w = 1f, fsize = 17.sp)
-            Key("6",         corner = "T", w = 1f, fsize = 17.sp)
-            Key("\u00D7",    corner = "U", w = 1f, fsize = 18.sp)
+            Key("\u2191",    w = 2f, fsize = 22.sp)
+            Key("4",         corner = "R", w = 1f, fsize = 18.sp)
+            Key("5",         corner = "S", w = 1f, fsize = 18.sp)
+            Key("6",         corner = "T", w = 1f, fsize = 18.sp)
+            Key("\u00D7",    corner = "U", w = 1f, fsize = 20.sp)
         }
 
         // ── ≡↓/FLGS row ───────────────────────────────────────────────────
         SRow {
             SMC(w = 2f) { MixT("\u2261\u2193 ", ShiftOrange); MixT("FLGS", LabelWhite) }
-            SMC(w = 1f) { BoxT("PREF KEYS") }
-            SMC(w = 1f) { BoxT("CONV CLK") }
-            SMC(w = 1f) { BoxT("FLAG \u03B1.FN") }
-            SMC(w = 1f) { BoxT("PROB FIN") }
+            SMC(w = 1f) { BoxT2("PREF", "KEYS") }
+            SMC(w = 1f) { BoxT2("CONV", "CLK") }
+            SMC(w = 1f) { BoxT2("FLAG", "\u03B1.FN") }
+            SMC(w = 1f) { BoxT2("PROB", "FIN") }
         }
         BtnRow {
-            Key("\u2193",    w = 2f, fsize = 20.sp)
-            Key("1",         corner = "V", w = 1f, fsize = 17.sp)
-            Key("2",         corner = "W", w = 1f, fsize = 17.sp)
-            Key("3",         corner = "X", w = 1f, fsize = 17.sp)
-            Key("\u2212",    corner = "Y", w = 1f, fsize = 18.sp)
+            Key("\u2193",    w = 2f, fsize = 22.sp)
+            Key("1",         corner = "V", w = 1f, fsize = 18.sp)
+            Key("2",         corner = "W", w = 1f, fsize = 18.sp)
+            Key("3",         corner = "X", w = 1f, fsize = 18.sp)
+            Key("\u2212",    corner = "Y", w = 1f, fsize = 20.sp)
         }
 
         // ── EXIT row ──────────────────────────────────────────────────────
@@ -259,14 +259,14 @@ private fun CalcKeyboard() {
             SMC(w = 1f) { MixT("VIEW ", LabelWhite); BoxT("I/O") }
             SMC(w = 1f) { MixT("SHOW ", LabelWhite); BoxT("ab/c") }
             SMC(w = 1f) { MixT("PRGM ", LabelWhite); BoxT("P.FN") }
-            SMC(w = 1f) { BoxT("CAT CNST") }
+            SMC(w = 1f) { BoxT2("CAT", "CNST") }
         }
         BtnRow {
-            Key("EXIT",      w = 2f)
-            Key("0",         corner = "Z",  w = 1f, fsize = 17.sp)
-            Key("\u00B7",    corner = ",",  w = 1f, fsize = 22.sp)
-            Key("R/S",       corner = "?",  w = 1f, fsize = 12.sp)
-            Key("+",         corner = "L",  w = 1f, fsize = 19.sp)
+            Key("EXIT",      w = 2f, fsize = 16.sp)
+            Key("0",         corner = "Z",  w = 1f, fsize = 18.sp)
+            Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp)
+            Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp)
+            Key("+",         corner = "\u23CE", w = 1f, fsize = 20.sp)
         }
     }
 }
@@ -316,94 +316,101 @@ private fun RowScope.Key(
         BtnVariant.Blue    -> Triple(BtnBluFaceTop, BtnBluFaceBot, BtnBluDepth)
     }
 
+    // Outer cell (full width, no clip) — corner letter sits OUTSIDE the
+    // clipped button face, in the dark inter-button gutter (matches GIF).
     Box(
         modifier = Modifier
             .weight(w)
             .fillMaxHeight()
-            .padding(horizontal = 2.dp, vertical = 2.dp)
-            .clip(RoundedCornerShape(CORNER_DP.dp))
-            .clickable(interactionSource = src, indication = null) {},
-        contentAlignment = Alignment.Center
     ) {
-        // ── Canvas: depth shadow + gradient face + highlight ───────────────
-        Canvas(Modifier.fillMaxSize()) {
-            val cr   = CornerRadius(CORNER_DP.dp.toPx())
-            val dH   = size.height * DEPTH_PX_FRACTION
-            val faceY = if (pressed) dH else 0f
-            val faceH = size.height - dH
+        // Inner clickable clipped button face
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 2.dp, vertical = 2.dp)
+                .clip(RoundedCornerShape(CORNER_DP.dp))
+                .clickable(interactionSource = src, indication = null) {},
+            contentAlignment = Alignment.Center
+        ) {
+            // ── Canvas: depth shadow + gradient face + highlight ───────────
+            Canvas(Modifier.fillMaxSize()) {
+                val cr   = CornerRadius(CORNER_DP.dp.toPx())
+                val dH   = size.height * DEPTH_PX_FRACTION
+                val faceY = if (pressed) dH else 0f
+                val faceH = size.height - dH
 
-            // 1. Depth / side-wall layer  (only when not pressed)
-            if (!pressed) {
+                // 1. Depth / side-wall layer  (only when not pressed)
+                if (!pressed) {
+                    drawRoundRect(
+                        color = depth,
+                        topLeft = Offset(0f, dH * 0.55f),
+                        size = Size(size.width, size.height - dH * 0.55f),
+                        cornerRadius = cr
+                    )
+                }
+
+                // 2. Button face with vertical gradient
                 drawRoundRect(
-                    color = depth,
-                    topLeft = Offset(0f, dH * 0.55f),
-                    size = Size(size.width, size.height - dH * 0.55f),
+                    brush = Brush.verticalGradient(
+                        colors = listOf(fTop, fBot),
+                        startY = faceY,
+                        endY   = faceY + faceH
+                    ),
+                    topLeft = Offset(0f, faceY),
+                    size = Size(size.width, faceH),
+                    cornerRadius = cr
+                )
+
+                // 3. Specular highlight line along top edge
+                if (!pressed) {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.18f),
+                        start = Offset(CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
+                        end   = Offset(size.width - CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
+                        strokeWidth = 1.8f
+                    )
+                }
+
+                // 4. Very subtle bottom-edge darkening on the face
+                drawRoundRect(
+                    color = Color.Black.copy(alpha = if (pressed) 0.0f else 0.25f),
+                    topLeft = Offset(0f, faceY + faceH * 0.65f),
+                    size = Size(size.width, faceH * 0.35f),
                     cornerRadius = cr
                 )
             }
 
-            // 2. Button face with vertical gradient
-            drawRoundRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(fTop, fBot),
-                    startY = faceY,
-                    endY   = faceY + faceH
-                ),
-                topLeft = Offset(0f, faceY),
-                size = Size(size.width, faceH),
-                cornerRadius = cr
-            )
+            // ── Label text ─────────────────────────────────────────────────
+            val textYOffset = if (pressed)
+                (DEPTH_PX_FRACTION * 22 * 0.5f).dp   // sink down with the face
+            else
+                -(DEPTH_PX_FRACTION * 44 * 0.5f).dp  // float up on raised face
 
-            // 3. Specular highlight line along top edge
-            if (!pressed) {
-                drawLine(
-                    color = Color.White.copy(alpha = 0.18f),
-                    start = Offset(CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
-                    end   = Offset(size.width - CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
-                    strokeWidth = 1.8f
-                )
-            }
-
-            // 4. Very subtle bottom-edge darkening on the face
-            drawRoundRect(
-                color = Color.Black.copy(alpha = if (pressed) 0.0f else 0.25f),
-                topLeft = Offset(0f, faceY + faceH * 0.65f),
-                size = Size(size.width, faceH * 0.35f),
-                cornerRadius = cr
+            Text(
+                text = label,
+                modifier = Modifier
+                    .offset(y = textYOffset)
+                    .padding(horizontal = 3.dp),
+                color = LabelWhite,
+                fontSize = fsize,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Clip
             )
         }
 
-        // ── Label text ────────────────────────────────────────────────────
-        val textYOffset = if (pressed)
-            (DEPTH_PX_FRACTION * 22 * 0.5f).dp   // sink down with the face
-        else
-            -(DEPTH_PX_FRACTION * 44 * 0.5f).dp  // float up on raised face
-
-        Text(
-            text = label,
-            modifier = Modifier
-                .offset(y = textYOffset)
-                .padding(horizontal = 3.dp),
-            color = LabelWhite,
-            fontSize = fsize,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Clip
-        )
-
-        // ── Corner letter ─────────────────────────────────────────────────
+        // ── Corner letter (OUTSIDE the button face, in the gutter) ────────
         if (corner.isNotEmpty()) {
-            val cornerY = if (pressed) 1.dp else 7.dp
             Text(
                 text = corner,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 4.dp, bottom = cornerY),
+                    .padding(end = 0.dp, bottom = 0.dp),
                 color = CornerChar,
-                fontSize = 7.sp,
+                fontSize = 8.sp,
                 fontWeight = FontWeight.Normal,
-                lineHeight = 8.sp
+                lineHeight = 9.sp
             )
         }
     }
@@ -465,39 +472,107 @@ private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false) {
     )
 }
 
-/** Orange-bordered box label. */
+/** Orange-bordered box label. Default color is blue (matches R47: CPX/STK/CLR/INFO/I/O/ab/c/P.FN). */
 @Composable
-private fun RowScope.BoxT(text: String) {
+private fun RowScope.BoxT(text: String, color: Color = ShiftBlue) {
     Box(
         modifier = Modifier
-            .border(0.8.dp, BoxBorder, RoundedCornerShape(2.dp))
-            .padding(horizontal = 1.5.dp),
+            .border(1.dp, BoxBorder, RoundedCornerShape(2.dp))
+            .padding(horizontal = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = BoxBorder,
-            fontSize = 5.5.sp,
-            fontWeight = FontWeight.SemiBold,
+            color = color,
+            fontSize = 6.sp,
+            fontWeight = FontWeight.Bold,
             maxLines = 1,
             lineHeight = 8.sp
         )
     }
 }
 
-/** Filled orange box label (e.g. α). */
+/** Orange-bordered box with two words: first orange, second blue
+ *  (e.g. DISP TRG, BASE BITS, STAT PLOT, CAT CNST). */
+@Composable
+private fun RowScope.BoxT2(orange: String, blue: String) {
+    Row(
+        modifier = Modifier
+            .border(1.dp, BoxBorder, RoundedCornerShape(2.dp))
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = orange,
+            color = ShiftOrange,
+            fontSize = 6.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            lineHeight = 8.sp
+        )
+        Text(
+            text = " ",
+            fontSize = 6.sp,
+            maxLines = 1
+        )
+        Text(
+            text = blue,
+            color = ShiftBlue,
+            fontSize = 6.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            lineHeight = 8.sp
+        )
+    }
+}
+
+/** Two-color shift-label cell (no box): first word orange, second blue
+ *  (e.g. SIN ASIN, COS ACOS, TAN ATAN). */
+@Composable
+private fun RowScope.SMix2(orange: String, blue: String, w: Float = 1f) {
+    Row(
+        modifier = Modifier
+            .weight(w)
+            .fillMaxHeight(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = orange,
+            color = ShiftOrange,
+            fontSize = 7.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1
+        )
+        Text(
+            text = " ",
+            fontSize = 7.sp,
+            maxLines = 1
+        )
+        Text(
+            text = blue,
+            color = ShiftBlue,
+            fontSize = 7.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1
+        )
+    }
+}
+
+/** Filled orange box label (italic α — matches GIF). */
 @Composable
 private fun RowScope.BoxTFilled(text: String) {
     Box(
         modifier = Modifier
             .background(BoxBorder, RoundedCornerShape(2.dp))
-            .padding(horizontal = 2.5.dp, vertical = 0.5.dp),
+            .padding(horizontal = 3.dp, vertical = 0.5.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = Color.Black,
-            fontSize = 7.sp,
+            fontSize = 8.sp,
+            fontStyle = FontStyle.Italic,
             fontWeight = FontWeight.Bold,
             maxLines = 1
         )
