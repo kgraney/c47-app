@@ -6,7 +6,8 @@
       "WebFetch(domain:47calc.com)",
       "WebFetch(domain:c47calculator.wordpress.com)",
       "WebFetch(domain:c47-calculator.weebly.com)",
-      "Bash(JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" ./gradlew assembleDebug)"
+      "Bash(JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" ./gradlew assembleDebug)",
+      "Bash(./gradlew :app:assembleDebug)"
     ]
   }
 }
