@@ -1,6 +1,7 @@
 package com.kevingraney.c47
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -21,7 +22,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,7 +92,7 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
         ) {
             CalcHeader()
             Spacer(Modifier.height(4.dp))
-            CalcDisplay()
+            CalcDisplay(vm)
             Spacer(Modifier.height(10.dp))
             CalcKeyboard(vm)
         }
@@ -129,7 +133,7 @@ private fun CalcHeader() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CalcDisplay() {
+private fun CalcDisplay(vm: CalculatorViewModel? = null) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -137,10 +141,25 @@ private fun CalcDisplay() {
             .background(DisplayFrameBg, RoundedCornerShape(3.dp))
             .padding(4.dp)
     ) {
-        AndroidView(
-            factory = { ctx -> CalculatorDisplayView(ctx) },
-            modifier = Modifier.fillMaxSize()
-        )
+        if (vm != null) {
+            // Live engine framebuffer. StateFlow emits a new Bitmap each dirty
+            // tick (see CalculatorViewModel.start, ~30 Hz). FilterQuality.None
+            // keeps crisp LCD pixels when scaling from 400×240 to display size.
+            val lcd by vm.lcd.collectAsState()
+            Image(
+                bitmap = lcd.asImageBitmap(),
+                contentDescription = "Calculator display",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+                filterQuality = FilterQuality.None,
+            )
+        } else {
+            // Preview / no-VM fallback: the hand-drawn mock from commit 984c97b.
+            AndroidView(
+                factory = { ctx -> CalculatorDisplayView(ctx) },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
