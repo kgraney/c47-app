@@ -26,12 +26,14 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
+import android.view.HapticFeedbackConstants
 import com.kevingraney.c47.engine.CalculatorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -347,6 +349,7 @@ private fun RowScope.Key(
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val scope = rememberCoroutineScope()
+    val view = LocalView.current
 
     val (fTop, fBot, depth) = when (v) {
         BtnVariant.Normal  -> Triple(BtnFaceTop,    BtnFaceBot,    BtnDepth)
@@ -374,6 +377,7 @@ private fun RowScope.Key(
                 .pointerInput(keyCode, onKeyDown, onKeyUp) {
                     detectTapGestures(
                         onPress = { offset ->
+                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                             val press = PressInteraction.Press(offset)
                             src.emitPress(scope, press)
                             keyCode?.let { onKeyDown?.invoke(it) }
