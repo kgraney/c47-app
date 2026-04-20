@@ -4,48 +4,38 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.Executors
 
 // Simple state holder for the calculator.
 //
-// Not an androidx.lifecycle.ViewModel — engine state already survives process
-// death via saveCalc()/restoreCalc(), and rotation survival doesn't need a
-// persistent instance if the Bitmap is re-derived from the framebuffer each
-// tick. MainActivity owns the instance.
+// Threading: every native engine entry point is serialized onto a single
+// dedicated worker thread ("c47-engine"). The engine uses mutable file-scope
+// globals (ram, softmenuStack, tamBuffer, FN_state, timer[], lcd_buffer)
+// with no internal locking. Keeping everything on one thread matches the
+// DMCP/GTK reference builds.
 //
-// All native engine calls are serialized onto a single dedicated worker
-// thread ("c47-engine"). The C47 engine uses mutable file-scope globals
-// (ram, softmenuStack, tamBuffer, FN_state, timer[]) with no internal
-// locking — concurrent access from Main (key events) and Default (LCD
-// polling) would race. Running every entry point on one thread matches
-// the DMCP/GTK builds, whose main loops similarly serialize access. This
-// also keeps the engine off the UI thread, so slow refreshScreen calls
-// don't drop frames (previously showed up as "Skipped 30 frames").
+// Frame pipeline (see pumpFrame): the UI drives the tick via withFrameNanos
+// in CalculatorScreen, calling pumpFrame() each vsync. pumpFrame hops to the
+// engine thread to unpack the framebuffer directly into a reused direct
+// ByteBuffer as ARGB_8888, returns to Main, copies the buffer into the same
+// reused Bitmap with copyPixelsFromBuffer, then emits a fresh LcdFrame
+// (version-bumped) so Compose recomposes. The Bitmap and ByteBuffer are
+// allocated once — no per-frame GC.
 //
-// Key dispatch pipeline:
-//     Compose Key -> onKeyDown("06") -> engineScope.launch { engine.keyDown("06") } -> JNI -> btnPressed("06")
-// or for a softkey:
-//     Compose Key -> onKeyDown("1")  -> engineScope.launch { engine.keyDown("1") }  -> JNI -> btnFnPressed("1")
-//
-// Codes are engine-native: 2-char flat index "00".."36" into kbd_std_R47f_g
-// (assign.c:368), parsed by stringToKeyNumber in keyboard.c:1440. Softkeys
-// are single char "1".."6", converted to 0..5 by determineFunctionKeyItem_C47
-// at keyboard.c:22 (`*(data) - '0' - 1`).
-//
-// Display pipeline:
-//     30Hz poll -> withContext(engineDispatcher) { engine.readLcd(buf); pack }
-//     -> StateFlow emit on Main
+// Key dispatch:
+//     Compose Key -> onKeyDown("06") -> engineScope.launch { engine.keyDown("06") } -> JNI
+// Softkey codes are single char "1".."6"; data keys are 2-char "00".."36".
 class CalculatorViewModel(
     private val engine: C47Engine = C47Engine(),
 ) {
@@ -54,14 +44,19 @@ class CalculatorViewModel(
     private val engineDispatcher = engineExecutor.asCoroutineDispatcher()
     private val engineScope = CoroutineScope(SupervisorJob() + engineDispatcher)
 
-    private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var pollJob: Job? = null
+    // Reused across every frame — no per-tick allocation.
+    private val argbBuffer: ByteBuffer = ByteBuffer
+        .allocateDirect(C47Engine.FRAMEBUFFER_BYTES * 4)
+        .order(ByteOrder.nativeOrder())
+    private val bitmap: Bitmap = Bitmap.createBitmap(
+        C47Engine.SCREEN_WIDTH,
+        C47Engine.SCREEN_HEIGHT,
+        Bitmap.Config.ARGB_8888,
+    ).also { it.eraseColor(PIXEL_OFF_ARGB) }
 
-    private val _lcd = MutableStateFlow(blankBitmap())
-    val lcd: StateFlow<Bitmap> = _lcd.asStateFlow()
-
-    private val pixelBuf = ByteArray(C47Engine.FRAMEBUFFER_BYTES)
-    private val argbBuf = IntArray(C47Engine.FRAMEBUFFER_BYTES)
+    private var frameVersion = 0
+    private val _lcd = MutableStateFlow(LcdFrame(bitmap, frameVersion))
+    val lcd: StateFlow<LcdFrame> = _lcd.asStateFlow()
 
     fun init(stateDir: File) {
         engineScope.launch { engine.init(stateDir) }
@@ -75,26 +70,19 @@ class CalculatorViewModel(
         engineScope.launch { engine.keyUp(code) }
     }
 
-    fun start() {
-        if (pollJob?.isActive == true) return
-        pollJob = uiScope.launch {
-            while (true) {
-                val dirty = withContext(engineDispatcher) {
-                    val changed = engine.readLcd(pixelBuf)
-                    if (changed) packIntoArgb()
-                    changed
-                }
-                if (dirty) {
-                    _lcd.value = argbToBitmap()
-                }
-                delay(33L) // ~30 Hz
-            }
+    // Called from the UI's vsync-aligned LaunchedEffect. Cheap when clean:
+    // the native side just checks the dirty flag and returns false without
+    // touching the buffer.
+    suspend fun pumpFrame() {
+        val dirty = withContext(engineDispatcher) {
+            engine.renderArgb(argbBuffer, PIXEL_ON_ARGB, PIXEL_OFF_ARGB)
         }
-    }
-
-    fun stop() {
-        pollJob?.cancel()
-        pollJob = null
+        if (dirty) {
+            argbBuffer.rewind()
+            bitmap.copyPixelsFromBuffer(argbBuffer)
+            frameVersion++
+            _lcd.value = LcdFrame(bitmap, frameVersion)
+        }
     }
 
     fun save() {
@@ -102,50 +90,19 @@ class CalculatorViewModel(
     }
 
     fun shutdown() {
-        stop()
-        uiScope.cancel()
         engineScope.cancel()
         engineExecutor.shutdown()
     }
 
-    private fun packIntoArgb() {
-        // Engine emits 0 = off (parchment), 1 = on (dark).
-        for (i in argbBuf.indices) {
-            argbBuf[i] = if (pixelBuf[i].toInt() != 0) PIXEL_ON else PIXEL_OFF
-        }
-    }
-
-    private fun argbToBitmap(): Bitmap {
-        val bmp = Bitmap.createBitmap(
-            C47Engine.SCREEN_WIDTH,
-            C47Engine.SCREEN_HEIGHT,
-            Bitmap.Config.ARGB_8888,
-        )
-        bmp.setPixels(
-            argbBuf,
-            0,
-            C47Engine.SCREEN_WIDTH,
-            0, 0,
-            C47Engine.SCREEN_WIDTH,
-            C47Engine.SCREEN_HEIGHT,
-        )
-        return bmp
-    }
-
-    private fun blankBitmap(): Bitmap {
-        val bmp = Bitmap.createBitmap(
-            C47Engine.SCREEN_WIDTH,
-            C47Engine.SCREEN_HEIGHT,
-            Bitmap.Config.ARGB_8888,
-        )
-        bmp.eraseColor(PIXEL_OFF)
-        return bmp
-    }
-
     companion object {
-        // Match the palette CalculatorDisplayView uses — parchment background,
-        // near-black foreground.
-        private val PIXEL_OFF = Color.parseColor("#D2C89A")
-        private val PIXEL_ON  = Color.parseColor("#1A1A1A")
+        // Palette matches CalculatorDisplayView — parchment off, near-black on.
+        // Stored pre-packed as ARGB_8888 ints for the native renderer.
+        private const val PIXEL_OFF_ARGB = 0xFFD2C89A.toInt()
+        private const val PIXEL_ON_ARGB  = 0xFF1A1A1A.toInt()
     }
 }
+
+// The bitmap reference is shared — we mutate its pixels each frame. `version`
+// changes on every dirty emission so StateFlow equality doesn't dedupe us,
+// forcing Compose to recompose the Image.
+data class LcdFrame(val bitmap: Bitmap, val version: Int)

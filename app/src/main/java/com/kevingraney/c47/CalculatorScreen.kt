@@ -144,12 +144,22 @@ private fun CalcDisplay(vm: CalculatorViewModel? = null) {
             .padding(4.dp)
     ) {
         if (vm != null) {
-            // Live engine framebuffer. StateFlow emits a new Bitmap each dirty
-            // tick (see CalculatorViewModel.start, ~30 Hz). FilterQuality.None
-            // keeps crisp LCD pixels when scaling from 400×240 to display size.
-            val lcd by vm.lcd.collectAsState()
+            // Vsync-aligned pump: LaunchedEffect runs at the display's native
+            // refresh rate (60/90/120 Hz). pumpFrame is cheap when the engine
+            // hasn't drawn anything new — just checks a dirty flag natively.
+            LaunchedEffect(vm) {
+                while (true) {
+                    withFrameNanos { }
+                    vm.pumpFrame()
+                }
+            }
+            // Live engine framebuffer. The Bitmap is mutated in place each
+            // dirty tick; `frame.version` changes force recomposition so
+            // Compose re-reads the (now-updated) pixels. FilterQuality.None
+            // keeps crisp LCD pixels when scaling from 400×240.
+            val frame by vm.lcd.collectAsState()
             Image(
-                bitmap = lcd.asImageBitmap(),
+                bitmap = frame.bitmap.asImageBitmap(),
                 contentDescription = "Calculator display",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
@@ -171,8 +181,12 @@ private fun CalcDisplay(vm: CalculatorViewModel? = null) {
 
 @Composable
 private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
-    val onDown: (String) -> Unit = { vm?.onKeyDown(it) }
-    val onUp:   (String) -> Unit = { vm?.onKeyUp(it) }
+    // remember(vm) so lambda identities are stable across CalcKeyboard
+    // recompositions — otherwise every 43 Key composables' pointerInput
+    // blocks would tear down + rebuild their gesture detectors (keyed on
+    // these lambdas), briefly dropping in-flight touches.
+    val onDown: (String) -> Unit = remember(vm) { { code -> vm?.onKeyDown(code) } }
+    val onUp:   (String) -> Unit = remember(vm) { { code -> vm?.onKeyUp(code) } }
 
     Column(Modifier.fillMaxWidth()) {
 

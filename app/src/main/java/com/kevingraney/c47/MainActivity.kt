@@ -21,15 +21,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        vm.start()
-    }
-
-    override fun onStop() {
-        vm.stop()
-        super.onStop()
-    }
+    // Frame pump lives in CalculatorScreen as a vsync-aligned LaunchedEffect,
+    // so it starts/stops with composition — no onStart/onStop wiring needed.
 
     override fun onPause() {
         vm.save()

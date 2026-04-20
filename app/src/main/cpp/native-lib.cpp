@@ -7,6 +7,7 @@
 
 #include <jni.h>
 #include <android/log.h>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 
@@ -43,10 +44,11 @@ extern "C" {
   void execAutoRepeat(unsigned short key);         // keyboard.c
 
   // Android HAL hooks (c43-source/src/c47-android/hal/)
-  void c47_android_set_state_dir(const char *dir);
-  void c47_android_lcd_init(void);
-  int  c47_android_lcd_take_dirty(void);
-  void c47_android_lcd_copy_to(unsigned char *out);
+  void           c47_android_set_state_dir(const char *dir);
+  void           c47_android_lcd_init(void);
+  int            c47_android_lcd_take_dirty(void);
+  void           c47_android_lcd_copy_to(unsigned char *out);
+  const uint8_t *c47_android_lcd_raw(void);
 }
 
 // Timer slot IDs — must match c43-source/src/c47/defines.h:1374-1384.
@@ -144,39 +146,46 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeKeyUp(
 #endif
 }
 
+// Packs the engine's bit-packed framebuffer directly into the caller's
+// direct IntBuffer as ARGB_8888, skipping the intermediate byte[] and the
+// Kotlin-side pack loop. Returns JNI_FALSE (no work done) if the frame is
+// clean. The caller reuses one Bitmap and one buffer across frames.
 JNIEXPORT jboolean JNICALL
-Java_com_kevingraney_c47_engine_C47Engine_nativeReadLcd(
-        JNIEnv* env, jobject /*thiz*/, jbyteArray out) {
-    const jsize len = env->GetArrayLength(out);
-    if (len < kFramebufferBytes) {
-        LOGW("nativeReadLcd: buffer too small (%d < %d)", len, kFramebufferBytes);
+Java_com_kevingraney_c47_engine_C47Engine_nativeRenderArgb(
+        JNIEnv* env, jobject /*thiz*/, jobject directBuffer, jint onArgb, jint offArgb) {
+#if defined(C47_ENGINE_LINKED)
+    if (directBuffer == nullptr) return JNI_FALSE;
+    void* raw = env->GetDirectBufferAddress(directBuffer);
+    if (raw == nullptr) {
+        LOGW("nativeRenderArgb: buffer not direct");
         return JNI_FALSE;
     }
-    jbyte* px = env->GetByteArrayElements(out, nullptr);
-#if defined(C47_ENGINE_LINKED)
-    const int dirty = c47_android_lcd_take_dirty();
-    c47_android_lcd_copy_to(reinterpret_cast<unsigned char*>(px));
-    env->ReleaseByteArrayElements(out, px, 0);
-    return dirty ? JNI_TRUE : JNI_FALSE;
-#else
-    // Stub pattern so the VM -> Bitmap -> Compose path can be verified.
-    // Corners + a diagonal stripe, so we can tell it's coming from JNI
-    // rather than leftover zeros.
-    std::memset(px, 0, kFramebufferBytes);
-    for (int y = 0; y < kScreenHeight; ++y) {
-        int x = (y * kScreenWidth) / kScreenHeight;
-        if (x >= 0 && x < kScreenWidth) px[y * kScreenWidth + x] = 1;
+    const jlong cap = env->GetDirectBufferCapacity(directBuffer);
+    if (cap < (jlong)(kFramebufferBytes * 4)) {
+        LOGW("nativeRenderArgb: buffer too small (%lld < %d)",
+             (long long)cap, kFramebufferBytes * 4);
+        return JNI_FALSE;
     }
-    for (int x = 0; x < kScreenWidth; ++x) {
-        px[0 * kScreenWidth + x] = 1;
-        px[(kScreenHeight - 1) * kScreenWidth + x] = 1;
+    if (!c47_android_lcd_take_dirty()) return JNI_FALSE;
+
+    const uint8_t* buf = c47_android_lcd_raw();
+    if (buf == nullptr) return JNI_FALSE;
+
+    uint32_t* dst = static_cast<uint32_t*>(raw);
+    const uint32_t on  = static_cast<uint32_t>(onArgb);
+    const uint32_t off = static_cast<uint32_t>(offArgb);
+    for (int row = 0; row < kScreenHeight; ++row) {
+        const uint8_t* line = buf + 52 * row + 2;  // skip [dirty, row-index]
+        uint32_t*      out  = dst + row * kScreenWidth;
+        for (int x = 0; x < kScreenWidth; ++x) {
+            const int xr = kScreenWidth - 1 - x;
+            out[x] = ((line[xr >> 3] >> (xr & 7)) & 1u) ? on : off;
+        }
     }
-    for (int y = 0; y < kScreenHeight; ++y) {
-        px[y * kScreenWidth + 0] = 1;
-        px[y * kScreenWidth + kScreenWidth - 1] = 1;
-    }
-    env->ReleaseByteArrayElements(out, px, 0);
     return JNI_TRUE;
+#else
+    (void)env; (void)directBuffer; (void)onArgb; (void)offArgb;
+    return JNI_FALSE;
 #endif
 }
 

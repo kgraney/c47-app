@@ -44,6 +44,22 @@ add_compile_options(
     -Wno-pointer-sign
 )
 
+# Release-only optimization. We ship arm64-v8a only, so clang's default tune
+# (-march=armv8-a) is already appropriate. Deliberately no -ffast-math —
+# engine IEEE paths want strict semantics.
+add_compile_options(
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Release>:-flto=thin>
+    $<$<CONFIG:Release>:-fvisibility=hidden>
+    $<$<CONFIG:Release>:-ffunction-sections>
+    $<$<CONFIG:Release>:-fdata-sections>
+)
+add_link_options(
+    $<$<CONFIG:Release>:-flto=thin>
+    $<$<CONFIG:Release>:-Wl,--gc-sections>
+    $<$<CONFIG:Release>:-Wl,--icf=safe>
+)
+
 # ---------------------------------------------------------------------------
 # GMP: per-ABI prebuilt static libs (see scripts/build-gmp-android.sh).
 # ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 package com.kevingraney.c47.engine
 
 import java.io.File
+import java.nio.ByteBuffer
 
 class C47Engine {
 
@@ -21,7 +22,11 @@ class C47Engine {
     fun keyDown(key: String) = nativeKeyDown(key)
     fun keyUp(key: String) = nativeKeyUp(key)
 
-    fun readLcd(buf: ByteArray): Boolean = nativeReadLcd(buf)
+    // Writes ARGB_8888 pixels straight into `buf` (must be a direct buffer
+    // sized FRAMEBUFFER_BYTES * 4). Returns true if the frame was dirty and
+    // the buffer was updated; false means no work done and `buf` is stale.
+    fun renderArgb(buf: ByteBuffer, onArgb: Int, offArgb: Int): Boolean =
+        nativeRenderArgb(buf, onArgb, offArgb)
 
     fun save() = nativeSave()
     fun restore() = nativeRestore()
@@ -29,7 +34,7 @@ class C47Engine {
     private external fun nativeInit(stateDir: String)
     private external fun nativeKeyDown(key: String)
     private external fun nativeKeyUp(key: String)
-    private external fun nativeReadLcd(out: ByteArray): Boolean
+    private external fun nativeRenderArgb(buf: ByteBuffer, onArgb: Int, offArgb: Int): Boolean
     private external fun nativeSave()
     private external fun nativeRestore()
 }
