@@ -97,7 +97,7 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
         modifier = Modifier
             .fillMaxSize()
             .background(OuterBg),
-        contentAlignment = Alignment.TopCenter
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
