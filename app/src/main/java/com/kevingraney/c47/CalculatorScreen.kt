@@ -226,7 +226,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SC("|x| \u25B3", ShiftBlue, italic = true)
             SC("% \u0394%",  ShiftBlue, italic = true)
             SC("\u03C0 R\u2191", ShiftBlue, italic = true)
-            SC("USER ASN",   ShiftBlue, italic = true, fsize = 6)
+            SC("USER ASN",   ShiftBlue, italic = true, fsize = 8)
             SC("HOME",       ShiftBlue, italic = true)
             SC("CUST",       ShiftBlue, italic = true)
         }
@@ -245,7 +245,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { MixT("LASTx ", ShiftOrange); BoxT("STK") }
             SMC(w = 1f) { BoxT2("DISP", "TRG") }
             SMC(w = 1f) { BoxT2("PFX", "EXP") }
-            SC("\u21A9",     ShiftOrange, fsize = 10, w = 1f)
+            SC("\u21A9",     ShiftOrange, fsize = 12, w = 1f)
             SMC(w = 1f) { BoxT("CLR") }
         }
         BtnRow {
@@ -332,11 +332,13 @@ private fun BtnRow(height: Dp = 44.dp, content: @Composable RowScope.() -> Unit)
     Row(Modifier.fillMaxWidth().height(height), content = content)
 }
 
-/** Horizontal row for shift labels. */
+/** Horizontal row for shift labels. Top padding creates vertical breathing
+ *  room between the preceding button row and this label strip; labels remain
+ *  visually anchored to the button row BELOW (matches GIF). */
 @Composable
 private fun SRow(content: @Composable RowScope.() -> Unit) {
     Row(
-        Modifier.fillMaxWidth().height(14.dp),
+        Modifier.fillMaxWidth().height(22.dp).padding(top = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content
     )
@@ -386,7 +388,7 @@ private fun RowScope.Key(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 2.dp, vertical = 2.dp)
+                .padding(horizontal = 4.dp, vertical = 3.dp)
                 .clip(RoundedCornerShape(CORNER_DP.dp))
                 .pointerInput(keyCode, onKeyDown, onKeyUp) {
                     detectTapGestures(
@@ -498,7 +500,7 @@ private fun RowScope.SC(
     color: Color = ShiftOrange,
     italic: Boolean = false,
     w: Float = 1f,
-    fsize: Int = 7
+    fsize: Int = 9
 ) {
     Text(
         text = text,
@@ -536,7 +538,7 @@ private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false) {
     Text(
         text = text,
         color = color,
-        fontSize = 6.5.sp,
+        fontSize = 8.sp,
         fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
         fontWeight = FontWeight.Medium,
         maxLines = 1
@@ -555,10 +557,10 @@ private fun RowScope.BoxT(text: String, color: Color = ShiftBlue) {
         Text(
             text = text,
             color = color,
-            fontSize = 6.sp,
+            fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            lineHeight = 8.sp
+            lineHeight = 10.sp
         )
     }
 }
@@ -576,23 +578,23 @@ private fun RowScope.BoxT2(orange: String, blue: String) {
         Text(
             text = orange,
             color = ShiftOrange,
-            fontSize = 6.sp,
+            fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            lineHeight = 8.sp
+            lineHeight = 10.sp
         )
         Text(
             text = " ",
-            fontSize = 6.sp,
+            fontSize = 8.sp,
             maxLines = 1
         )
         Text(
             text = blue,
             color = ShiftBlue,
-            fontSize = 6.sp,
+            fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            lineHeight = 8.sp
+            lineHeight = 10.sp
         )
     }
 }
@@ -611,19 +613,19 @@ private fun RowScope.SMix2(orange: String, blue: String, w: Float = 1f) {
         Text(
             text = orange,
             color = ShiftOrange,
-            fontSize = 7.sp,
+            fontSize = 9.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
         Text(
             text = " ",
-            fontSize = 7.sp,
+            fontSize = 9.sp,
             maxLines = 1
         )
         Text(
             text = blue,
             color = ShiftBlue,
-            fontSize = 7.sp,
+            fontSize = 9.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
@@ -665,7 +667,7 @@ private fun RowScope.BoxTFilled(text: String) {
         Text(
             text = text,
             color = Color.Black,
-            fontSize = 8.sp,
+            fontSize = 10.sp,
             fontStyle = FontStyle.Italic,
             fontWeight = FontWeight.Bold,
             maxLines = 1
