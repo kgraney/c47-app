@@ -27,6 +27,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
 import android.view.HapticFeedbackConstants
+import com.kevingraney.c47.R
 import com.kevingraney.c47.engine.CalculatorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -70,6 +73,16 @@ private val BoxBorder      = Color(0xFFFF9028)
 private val BoxBorderBlue  = Color(0xFF82AAFF)
 
 enum class BtnVariant { Normal, Softkey, Orange, Blue }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fonts — vendored from c43-source/res/fonts. The TTFs use a custom 16-bit
+// PUA encoding (see c43-source/src/c47/fonts.h): bytes \xXX\xYY in the C
+// `#define STD_*` macros map to codepoint U+XXYY in the font's cmap, which
+// Compose can address directly via "\uXXYY" string literals.
+// ─────────────────────────────────────────────────────────────────────────────
+
+private val C47Standard = FontFamily(Font(R.font.c47_standard))
+private val C47Tiny     = FontFamily(Font(R.font.c47_tiny))
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root screen
@@ -205,15 +218,15 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
         // (assign.c:368). btnPressed parses via stringToKeyNumber at
         // keyboard.c:1440. Row 1 = entries 0..5.
         SRow {
-            SC("i \u2192R",    ShiftOrange, italic = true)
-            SC("i\u2080\u2192P", ShiftOrange, italic = true)
-            SC("x!\u00B7ms", ShiftOrange, italic = true)
-            SC("\u02E3\u221Ay\u00B7d", ShiftOrange, italic = true)
-            SC("10\u02E3\u2192I", ShiftOrange, italic = true)
-            SC("e\u02E3 #",   ShiftOrange, italic = true)
+            SC("i \u2192R",               ShiftOrange, italic = true)
+            SC("i\u2080\u2192P",          ShiftOrange, italic = true)
+            SC("x!\u00B7ms",              ShiftOrange, italic = true)
+            SC("\u02E3\u221Ay\u00B7d",    ShiftOrange, italic = true)
+            SC("10\u02E3\u2192I",         ShiftOrange, italic = true)
+            SC("e\u02E3 #",               ShiftOrange, italic = true)
         }
         BtnRow {
-            Key("x\u00B2",  corner = "A", keyCode = "00", onKeyDown = onDown, onKeyUp = onUp)
+            Key("x\u00B2",   corner = "A", keyCode = "00", onKeyDown = onDown, onKeyUp = onUp)
             Key("\u221Ax",   corner = "B", keyCode = "01", onKeyDown = onDown, onKeyUp = onUp)
             Key("1/x",       corner = "C", keyCode = "02", onKeyDown = onDown, onKeyUp = onUp)
             Key("y\u02E3",   corner = "D", keyCode = "03", onKeyDown = onDown, onKeyUp = onUp)
@@ -245,7 +258,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { MixT("LASTx ", ShiftOrange); BoxT("STK") }
             SMC(w = 1f) { BoxT2("DISP", "TRG") }
             SMC(w = 1f) { BoxT2("PFX", "EXP") }
-            SC("\u21A9",     ShiftOrange, fsize = 12, w = 1f)
+            SC("\u21B5",     ShiftOrange, fsize = 12, w = 1f)
             SMC(w = 1f) { BoxT("CLR") }
         }
         BtnRow {
@@ -317,7 +330,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             Key("0",         corner = "Z",  w = 1f, fsize = 18.sp, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
             Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
             Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp, keyCode = "35", onKeyDown = onDown, onKeyUp = onUp)
-            Key("+",         corner = "\u23CE", w = 1f, fsize = 20.sp, keyCode = "36", onKeyDown = onDown, onKeyUp = onUp)
+            Key("+",         corner = "\u21B5", w = 1f, fsize = 20.sp, keyCode = "36", onKeyDown = onDown, onKeyUp = onUp)
         }
     }
 }
@@ -465,6 +478,7 @@ private fun RowScope.Key(
                     .offset(y = textYOffset)
                     .padding(horizontal = 3.dp),
                 color = LabelWhite,
+                fontFamily = C47Standard,
                 fontSize = fsize,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -481,6 +495,7 @@ private fun RowScope.Key(
                     .align(Alignment.BottomEnd)
                     .padding(end = 0.dp, bottom = 0.dp),
                 color = CornerChar,
+                fontFamily = C47Tiny,
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Normal,
                 lineHeight = 9.sp
@@ -509,6 +524,7 @@ private fun RowScope.SC(
             .fillMaxHeight()
             .wrapContentHeight(Alignment.CenterVertically),
         color = color,
+        fontFamily = C47Tiny,
         fontSize = fsize.sp,
         fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
         textAlign = TextAlign.Center,
@@ -538,6 +554,7 @@ private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false) {
     Text(
         text = text,
         color = color,
+        fontFamily = C47Tiny,
         fontSize = 8.sp,
         fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
         fontWeight = FontWeight.Medium,
@@ -557,6 +574,7 @@ private fun RowScope.BoxT(text: String, color: Color = ShiftBlue) {
         Text(
             text = text,
             color = color,
+            fontFamily = C47Tiny,
             fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -578,6 +596,7 @@ private fun RowScope.BoxT2(orange: String, blue: String) {
         Text(
             text = orange,
             color = ShiftOrange,
+            fontFamily = C47Tiny,
             fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -585,12 +604,14 @@ private fun RowScope.BoxT2(orange: String, blue: String) {
         )
         Text(
             text = " ",
+            fontFamily = C47Tiny,
             fontSize = 8.sp,
             maxLines = 1
         )
         Text(
             text = blue,
             color = ShiftBlue,
+            fontFamily = C47Tiny,
             fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -613,18 +634,21 @@ private fun RowScope.SMix2(orange: String, blue: String, w: Float = 1f) {
         Text(
             text = orange,
             color = ShiftOrange,
+            fontFamily = C47Tiny,
             fontSize = 9.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
         Text(
             text = " ",
+            fontFamily = C47Tiny,
             fontSize = 9.sp,
             maxLines = 1
         )
         Text(
             text = blue,
             color = ShiftBlue,
+            fontFamily = C47Tiny,
             fontSize = 9.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1
@@ -667,6 +691,7 @@ private fun RowScope.BoxTFilled(text: String) {
         Text(
             text = text,
             color = Color.Black,
+            fontFamily = C47Standard,
             fontSize = 10.sp,
             fontStyle = FontStyle.Italic,
             fontWeight = FontWeight.Bold,
