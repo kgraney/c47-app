@@ -17,13 +17,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
@@ -66,11 +69,11 @@ private val BtnBluFaceBot  = Color(0xFF2A5AB6)
 private val BtnBluDepth    = Color(0xFF143470)
 
 private val LabelWhite     = Color(0xFFFFFFFF)
-private val ShiftOrange    = Color(0xFFFF9A28)
-private val ShiftBlue      = Color(0xFF82AAFF)
+private val ShiftOrange    = Color(0xFFE08020)
+private val ShiftBlue      = Color(0xFF40A0C0)
 private val CornerChar     = Color(0xFF787878)
-private val BoxBorder      = Color(0xFFFF9028)
-private val BoxBorderBlue  = Color(0xFF82AAFF)
+private val BoxBorder      = Color(0xFFBEBEBE)
+private val BoxBorderFill  = Color(0xFFE08020)
 
 enum class BtnVariant { Normal, Softkey, Orange, Blue }
 
@@ -218,12 +221,12 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
         // (assign.c:368). btnPressed parses via stringToKeyNumber at
         // keyboard.c:1440. Row 1 = entries 0..5.
         SRow {
-            SC("i \u2192R",               ShiftOrange, italic = true)
-            SC("i\u2080\u2192P",          ShiftOrange, italic = true)
-            SC("x!\u00B7ms",              ShiftOrange, italic = true)
-            SC("\u02E3\u221Ay\u00B7d",    ShiftOrange, italic = true)
-            SC("10\u02E3\u2192I",         ShiftOrange, italic = true)
-            SC("e\u02E3 #",               ShiftOrange, italic = true)
+            SMix2("i",             "\u2192R",  italic = true, fsize = 8)
+            SMix2("i\u2080",       "\u2192P",  italic = true, fsize = 8)
+            SMix2("x!",            "\u00B7ms", italic = true, fsize = 8)
+            SMix2("\u02E3\u221Ay", "\u00B7d",  italic = true, fsize = 8)
+            SMix2("10\u02E3",      "\u2192I",  italic = true, fsize = 8)
+            SMix2("e\u02E3",       "#",        italic = true, fsize = 8)
         }
         BtnRow {
             Key("x\u00B2",   corner = "A", keyCode = "00", onKeyDown = onDown, onKeyUp = onUp)
@@ -236,12 +239,12 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── Row 2 ─ STO, RCL, R↓, DRG, [orange], [blue] ─────────────────
         SRow {
-            SC("|x| \u25B3", ShiftBlue, italic = true)
-            SC("% \u0394%",  ShiftBlue, italic = true)
-            SC("\u03C0 R\u2191", ShiftBlue, italic = true)
-            SC("USER ASN",   ShiftBlue, italic = true, fsize = 8)
-            SC("HOME",       ShiftBlue, italic = true)
-            SC("CUST",       ShiftBlue, italic = true)
+            SMix2("|x|",      "\u25B3",       fsize = 8)
+            SMix2("%",        "\u0394%",      fsize = 8)
+            SMix2("\u03C0",   "R\u2191",      fsize = 8)
+            SMix2("USER",     "ASN",          fsize = 8)
+            SC("HOME",        LabelWhite)
+            SC("CUST",        LabelWhite)
         }
         BtnRow {
             Key("STO",       corner = "G", keyCode = "06", onKeyDown = onDown, onKeyUp = onUp)
@@ -253,13 +256,15 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
         }
 
         // ── COMPLEX/ENTER row ─────────────────────────────────────────────
+        // Labels align 1:1 with the button row below. ENTER spans 2 columns,
+        // so "COMPLEX [CPX]" sits in a w=2 cell above it. Back (←) carries
+        // both the orange ↵ glyph and the [CLR] box in one w=1 cell.
         SRow {
-            SMC(w = 1f) { MixT("COMPLEX ", ShiftOrange); BoxT("CPX") }
+            SMC(w = 2f) { MixT("COMPLEX ", ShiftOrange); BoxT("CPX") }
             SMC(w = 1f) { MixT("LASTx ", ShiftOrange); BoxT("STK") }
             SMC(w = 1f) { BoxT2("DISP", "TRG") }
             SMC(w = 1f) { BoxT2("PFX", "EXP") }
-            SC("\u21B5",     ShiftOrange, fsize = 12, w = 1f)
-            SMC(w = 1f) { BoxT("CLR") }
+            SMC(w = 1f) { MixT("\u21B5 ", ShiftOrange, fsize = 10); BoxT("CLR") }
         }
         BtnRow {
             Key("ENTER",     w = 2f, fsize = 16.sp, keyCode = "12", onKeyDown = onDown, onKeyUp = onUp)
@@ -271,7 +276,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── α/GTO row ─────────────────────────────────────────────────────
         SRow {
-            SMC(w = 1f) { BoxTFilled("\u03B1"); MixT(" GTO", LabelWhite) }
+            SMC(w = 1f) { BoxTFilled("\u03B1"); MixT(" GTO", ShiftBlue) }
             SMix2("SIN", "ASIN", w = 1f)
             SMix2("COS", "ACOS", w = 1f)
             SMix2("TAN", "ATAN", w = 1f)
@@ -287,7 +292,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── ≡↑/REGS row ───────────────────────────────────────────────────
         SRow {
-            SMC(w = 1f) { MixT("\u2261\u2191 ", ShiftOrange); MixT("REGS", LabelWhite) }
+            SMC(w = 1f) { MixT("\u2261\u2191 ", ShiftOrange); MixT("REGS", ShiftBlue) }
             SMC(w = 1f) { BoxT2("BASE", "BITS") }
             SMC(w = 1f) { BoxT2("INTS", "REAL") }
             SMC(w = 1f) { BoxT2("MATX", "X.FN") }
@@ -303,7 +308,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── ≡↓/FLGS row ───────────────────────────────────────────────────
         SRow {
-            SMC(w = 1f) { MixT("\u2261\u2193 ", ShiftOrange); MixT("FLGS", LabelWhite) }
+            SMC(w = 1f) { MixT("\u2261\u2193 ", ShiftOrange); MixT("FLGS", ShiftBlue) }
             SMC(w = 1f) { BoxT2("PREF", "KEYS") }
             SMC(w = 1f) { BoxT2("CONV", "CLK") }
             SMC(w = 1f) { BoxT2("FLAG", "\u03B1.FN") }
@@ -319,10 +324,10 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── EXIT row ──────────────────────────────────────────────────────
         SRow {
-            SMC(w = 1f) { MixT("\u23FB ", ShiftOrange); BoxT("INFO") }
-            SMC(w = 1f) { MixT("VIEW ", LabelWhite); BoxT("I/O") }
-            SMC(w = 1f) { MixT("SHOW ", LabelWhite); BoxT("ab/c") }
-            SMC(w = 1f) { MixT("PRGM ", LabelWhite); BoxT("P.FN") }
+            SMC(w = 1f) { PowerGlyph(); Spacer(Modifier.width(2.dp)); BoxT("INFO") }
+            SMC(w = 1f) { MixT("VIEW ", ShiftOrange); BoxT("I/O") }
+            SMix2("SHOW", "ab/c", w = 1f, fsize = 7)
+            SMC(w = 1f) { MixT("PRGM ", ShiftOrange); BoxT("P.FN") }
             SMC(w = 1f) { BoxT2("CAT", "CNST") }
         }
         BtnRow {
@@ -542,7 +547,8 @@ private fun RowScope.SMC(
     Row(
         modifier = Modifier
             .weight(w)
-            .fillMaxHeight(),
+            .fillMaxHeight()
+            .clipToBounds(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) { content() }
@@ -550,12 +556,12 @@ private fun RowScope.SMC(
 
 /** Inline text fragment inside a SMC cell. */
 @Composable
-private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false) {
+private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false, fsize: Int = 7) {
     Text(
         text = text,
         color = color,
         fontFamily = C47Tiny,
-        fontSize = 8.sp,
+        fontSize = fsize.sp,
         fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
         fontWeight = FontWeight.Medium,
         maxLines = 1
@@ -564,21 +570,21 @@ private fun RowScope.MixT(text: String, color: Color, italic: Boolean = false) {
 
 /** Orange-bordered box label. Default color is blue (matches R47: CPX/STK/CLR/INFO/I/O/ab/c/P.FN). */
 @Composable
-private fun RowScope.BoxT(text: String, color: Color = ShiftBlue) {
+private fun RowScope.BoxT(text: String, color: Color = ShiftBlue, fsize: Int = 7) {
     Box(
         modifier = Modifier
             .border(1.dp, BoxBorder, RoundedCornerShape(2.dp))
-            .padding(horizontal = 2.dp),
+            .padding(horizontal = 1.5.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = color,
             fontFamily = C47Tiny,
-            fontSize = 8.sp,
+            fontSize = fsize.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            lineHeight = 10.sp
+            lineHeight = (fsize + 2).sp
         )
     }
 }
@@ -590,40 +596,47 @@ private fun RowScope.BoxT2(orange: String, blue: String) {
     Row(
         modifier = Modifier
             .border(1.dp, BoxBorder, RoundedCornerShape(2.dp))
-            .padding(horizontal = 2.dp),
+            .padding(horizontal = 1.5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = orange,
             color = ShiftOrange,
             fontFamily = C47Tiny,
-            fontSize = 8.sp,
+            fontSize = 7.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            lineHeight = 10.sp
+            lineHeight = 9.sp
         )
         Text(
             text = " ",
             fontFamily = C47Tiny,
-            fontSize = 8.sp,
+            fontSize = 7.sp,
             maxLines = 1
         )
         Text(
             text = blue,
             color = ShiftBlue,
             fontFamily = C47Tiny,
-            fontSize = 8.sp,
+            fontSize = 7.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            lineHeight = 10.sp
+            lineHeight = 9.sp
         )
     }
 }
 
 /** Two-color shift-label cell (no box): first word orange, second blue
- *  (e.g. SIN ASIN, COS ACOS, TAN ATAN). */
+ *  (e.g. SIN ASIN, COS ACOS, TAN ATAN). When `italic` is true, both halves
+ *  render italic — used by row 1/2 where the symbol is a math-italic glyph. */
 @Composable
-private fun RowScope.SMix2(orange: String, blue: String, w: Float = 1f) {
+private fun RowScope.SMix2(
+    orange: String,
+    blue: String,
+    w: Float = 1f,
+    italic: Boolean = false,
+    fsize: Int = 9,
+) {
     Row(
         modifier = Modifier
             .weight(w)
@@ -631,25 +644,28 @@ private fun RowScope.SMix2(orange: String, blue: String, w: Float = 1f) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
+        val style = if (italic) FontStyle.Italic else FontStyle.Normal
         Text(
             text = orange,
             color = ShiftOrange,
             fontFamily = C47Tiny,
-            fontSize = 9.sp,
+            fontSize = fsize.sp,
+            fontStyle = style,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
         Text(
             text = " ",
             fontFamily = C47Tiny,
-            fontSize = 9.sp,
+            fontSize = fsize.sp,
             maxLines = 1
         )
         Text(
             text = blue,
             color = ShiftBlue,
             fontFamily = C47Tiny,
-            fontSize = 9.sp,
+            fontSize = fsize.sp,
+            fontStyle = style,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
@@ -679,12 +695,41 @@ private fun MutableInteractionSource.emitRelease(
     }
 }
 
+/** Power symbol (⏻ U+23FB is missing from the C47 font). Circle with a vertical
+ *  line gap at the top, drawn orange to match the GIF EXIT-row shift label. */
+@Composable
+private fun PowerGlyph(size: Dp = 9.dp, color: Color = ShiftOrange) {
+    Canvas(Modifier.size(size)) {
+        val stroke = this.size.minDimension * 0.14f
+        val r = this.size.minDimension * 0.40f
+        val cx = this.size.width / 2f
+        val cy = this.size.height / 2f
+        // Arc from ~30° past top clockwise nearly full circle (leaves gap at top).
+        drawArc(
+            color = color,
+            startAngle = -60f,
+            sweepAngle = 300f,
+            useCenter = false,
+            topLeft = Offset(cx - r, cy - r),
+            size = Size(r * 2f, r * 2f),
+            style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
+        drawLine(
+            color = color,
+            start = Offset(cx, cy - r * 1.15f),
+            end = Offset(cx, cy + r * 0.1f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
 /** Filled orange box label (italic α — matches GIF). */
 @Composable
 private fun RowScope.BoxTFilled(text: String) {
     Box(
         modifier = Modifier
-            .background(BoxBorder, RoundedCornerShape(2.dp))
+            .background(BoxBorderFill, RoundedCornerShape(2.dp))
             .padding(horizontal = 3.dp, vertical = 0.5.dp),
         contentAlignment = Alignment.Center
     ) {
