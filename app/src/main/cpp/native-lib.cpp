@@ -42,6 +42,10 @@ extern "C" {
   void execFnTimeout (unsigned short key);         // c47Extensions/keyboardTweak.c
   void shiftCutoff   (unsigned short param);       // c47Extensions/keyboardTweak.c
   void execAutoRepeat(unsigned short key);         // keyboard.c
+  void refreshTimer  (void);                       // timer.c — expires queued
+                                                   // timers (press-and-hold row
+                                                   // cycling, auto-repeat,
+                                                   // shift cutoff, etc.)
 
   // Android HAL hooks (c43-source/src/c47-android/hal/)
   void           c47_android_set_state_dir(const char *dir);
@@ -143,6 +147,22 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeKeyUp(
     } else {
         LOGW("nativeKeyUp: unexpected key length %zu", len);
     }
+#endif
+}
+
+// Drive the engine's timer subsystem. Without a periodic tick, none of the
+// timed behaviors work: press-and-hold softkey row cycling (TO_FN_LONG) —
+// which produces the diagonal-hatch underline feedback on the emulator —
+// never fires, so the user can only ever execute the top row of a softmenu;
+// auto-repeat (TO_AUTO_REPEAT) and the 3-second shift cutoff (TO_3S_CTFF)
+// are also dead. Called every vsync from CalculatorViewModel.pumpFrame on
+// the engine thread; cheap when no timers are running (just walks TMR_NUMBER
+// entries and checks state).
+JNIEXPORT void JNICALL
+Java_com_kevingraney_c47_engine_C47Engine_nativeTick(
+        JNIEnv* /*env*/, jobject /*thiz*/) {
+#if defined(C47_ENGINE_LINKED)
+    refreshTimer();
 #endif
 }
 

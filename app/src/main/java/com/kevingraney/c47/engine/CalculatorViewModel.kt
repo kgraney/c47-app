@@ -72,9 +72,14 @@ class CalculatorViewModel(
 
     // Called from the UI's vsync-aligned LaunchedEffect. Cheap when clean:
     // the native side just checks the dirty flag and returns false without
-    // touching the buffer.
+    // touching the buffer. Must also tick the engine's timer subsystem —
+    // without this, press-and-hold softkey row cycling (the diagonal-hatch
+    // underline feedback) and the 3-second shift cutoff never fire, so
+    // function menus are effectively unnavigable beyond their top row.
+    // Timer callbacks may write to lcd_buffer, so tick before renderArgb.
     suspend fun pumpFrame() {
         val dirty = withContext(engineDispatcher) {
+            engine.tick()
             engine.renderArgb(argbBuffer, PIXEL_ON_ARGB, PIXEL_OFF_ARGB)
         }
         if (dirty) {

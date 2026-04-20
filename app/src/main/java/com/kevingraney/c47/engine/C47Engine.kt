@@ -22,6 +22,11 @@ class C47Engine {
     fun keyDown(key: String) = nativeKeyDown(key)
     fun keyUp(key: String) = nativeKeyUp(key)
 
+    // Drive the engine's timer subsystem. Must be called periodically
+    // (at least every ~50ms) for press-and-hold softkey row cycling,
+    // auto-repeat, and shift cutoff to work. Vsync pumping is fine.
+    fun tick() = nativeTick()
+
     // Writes ARGB_8888 pixels straight into `buf` (must be a direct buffer
     // sized FRAMEBUFFER_BYTES * 4). Returns true if the frame was dirty and
     // the buffer was updated; false means no work done and `buf` is stale.
@@ -34,6 +39,7 @@ class C47Engine {
     private external fun nativeInit(stateDir: String)
     private external fun nativeKeyDown(key: String)
     private external fun nativeKeyUp(key: String)
+    private external fun nativeTick()
     private external fun nativeRenderArgb(buf: ByteBuffer, onArgb: Int, offArgb: Int): Boolean
     private external fun nativeSave()
     private external fun nativeRestore()
