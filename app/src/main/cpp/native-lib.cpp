@@ -7,6 +7,7 @@
 
 #include <jni.h>
 #include <android/log.h>
+#include <android/trace.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -14,6 +15,15 @@
 #define LOG_TAG "c47-jni"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,  LOG_TAG, __VA_ARGS__)
+
+// RAII scope for systrace; zero-cost when tracing disabled (ATrace_isEnabled
+// gates the section). Capture with Perfetto to see where engine-thread time
+// goes during key presses vs. idle renders.
+struct AtraceScope {
+    AtraceScope(const char* name) { ATrace_beginSection(name); }
+    ~AtraceScope() { ATrace_endSection(); }
+};
+#define TRACE_SCOPE(name) AtraceScope _atrace_scope_##__LINE__(name)
 
 // Keep in sync with the engine's SCREEN_WIDTH / SCREEN_HEIGHT in defines.h.
 static constexpr int kScreenWidth  = 400;
@@ -111,6 +121,7 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeInit(
 JNIEXPORT void JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeKeyDown(
         JNIEnv* env, jobject /*thiz*/, jstring jkey) {
+    TRACE_SCOPE("c47:keyDown");
     const char* src = env->GetStringUTFChars(jkey, nullptr);
     char key[3] = {0};
     // Copy up to 2 chars — longer strings are silently truncated, but the
@@ -133,6 +144,7 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeKeyDown(
 JNIEXPORT void JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeKeyUp(
         JNIEnv* env, jobject /*thiz*/, jstring jkey) {
+    TRACE_SCOPE("c47:keyUp");
     const char* src = env->GetStringUTFChars(jkey, nullptr);
     char key[3] = {0};
     std::strncpy(key, src, 2);
@@ -155,12 +167,13 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeKeyUp(
 // which produces the diagonal-hatch underline feedback on the emulator —
 // never fires, so the user can only ever execute the top row of a softmenu;
 // auto-repeat (TO_AUTO_REPEAT) and the 3-second shift cutoff (TO_3S_CTFF)
-// are also dead. Called every vsync from CalculatorViewModel.pumpFrame on
-// the engine thread; cheap when no timers are running (just walks TMR_NUMBER
+// are also dead. Called ~120 Hz from CalculatorViewModel's engine-thread
+// pump loop; cheap when no timers are running (just walks TMR_NUMBER
 // entries and checks state).
 JNIEXPORT void JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeTick(
         JNIEnv* /*env*/, jobject /*thiz*/) {
+    TRACE_SCOPE("c47:tick");
 #if defined(C47_ENGINE_LINKED)
     refreshTimer();
 #endif
@@ -173,6 +186,7 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeTick(
 JNIEXPORT jboolean JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeRenderArgb(
         JNIEnv* env, jobject /*thiz*/, jobject directBuffer, jint onArgb, jint offArgb) {
+    TRACE_SCOPE("c47:renderArgb");
 #if defined(C47_ENGINE_LINKED)
     if (directBuffer == nullptr) return JNI_FALSE;
     void* raw = env->GetDirectBufferAddress(directBuffer);

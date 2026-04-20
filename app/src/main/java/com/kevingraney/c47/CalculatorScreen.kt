@@ -5,9 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +18,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.StrokeCap
@@ -38,10 +34,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
+import android.os.Trace
 import android.view.HapticFeedbackConstants
 import com.kevingraney.c47.R
 import com.kevingraney.c47.engine.CalculatorViewModel
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,19 +50,15 @@ private val BodyBg         = Color(0xFF1C1C1C)
 private val DisplayFrameBg = Color(0xFF0E0E0E)
 
 private val BtnFaceTop     = Color(0xFF3E3E3E)
-private val BtnFaceBot     = Color(0xFF252525)
 private val BtnDepth       = Color(0xFF0D0D0D)
 
 private val BtnSkFaceTop   = Color(0xFF272727)
-private val BtnSkFaceBot   = Color(0xFF181818)
 private val BtnSkDepth     = Color(0xFF070707)
 
 private val BtnOrgFaceTop  = Color(0xFFE88A26)
-private val BtnOrgFaceBot  = Color(0xFFAF5C00)
 private val BtnOrgDepth    = Color(0xFF703700)
 
 private val BtnBluFaceTop  = Color(0xFF4E8AE4)
-private val BtnBluFaceBot  = Color(0xFF2A5AB6)
 private val BtnBluDepth    = Color(0xFF143470)
 
 private val LabelWhite     = Color(0xFFFFFFFF)
@@ -85,6 +78,7 @@ enum class BtnVariant { Normal, Softkey, Orange, Blue }
 // ─────────────────────────────────────────────────────────────────────────────
 
 private val C47Standard = FontFamily(Font(R.font.c47_standard))
+private val C47Numeric  = FontFamily(Font(R.font.c47_numeric))
 private val C47Tiny     = FontFamily(Font(R.font.c47_tiny))
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -108,9 +102,7 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
                 .background(BodyBg)
                 .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp)
         ) {
-            CalcHeader()
-            Spacer(Modifier.height(4.dp))
-            CalcDisplay(vm)
+            CalcDisplayUnit(vm)
             Spacer(Modifier.height(10.dp))
             CalcKeyboard(vm)
         }
@@ -118,31 +110,40 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Header
+// Display unit — single dark bezel rectangle containing the SwissMicros/R47
+// header strip directly above the cream LCD area (matches r47.gif, where the
+// branding text sits on the display bezel rather than floating above it).
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CalcHeader() {
-    Row(
+private fun CalcDisplayUnit(vm: CalculatorViewModel? = null) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(34.dp)
-            .padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(DisplayFrameBg, RoundedCornerShape(6.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        Text(
-            "SwissMicros",
-            color = LabelWhite,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            "R47",
-            color = LabelWhite,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Normal
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "SwissMicros",
+                color = LabelWhite,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "R47",
+                color = LabelWhite,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Normal
+            )
+        }
+        CalcDisplay(vm)
     }
 }
 
@@ -155,27 +156,19 @@ private fun CalcDisplay(vm: CalculatorViewModel? = null) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp)
-            .background(DisplayFrameBg, RoundedCornerShape(3.dp))
-            .padding(4.dp)
+            .height(200.dp)
     ) {
         if (vm != null) {
-            // Vsync-aligned pump: LaunchedEffect runs at the display's native
-            // refresh rate (60/90/120 Hz). pumpFrame is cheap when the engine
-            // hasn't drawn anything new — just checks a dirty flag natively.
-            LaunchedEffect(vm) {
-                while (true) {
-                    withFrameNanos { }
-                    vm.pumpFrame()
-                }
-            }
-            // Live engine framebuffer. The Bitmap is mutated in place each
-            // dirty tick; `frame.version` changes force recomposition so
-            // Compose re-reads the (now-updated) pixels. FilterQuality.None
-            // keeps crisp LCD pixels when scaling from 400×240.
+            // Live engine framebuffer. The ViewModel drives its own tick +
+            // render loop on the engine thread and double-buffers bitmaps,
+            // emitting a new LcdFrame each dirty tick. We cache the
+            // ImageBitmap wrapper by version so we only reallocate it when
+            // the front buffer swaps. FilterQuality.None keeps crisp LCD
+            // pixels when scaling from 400×240.
             val frame by vm.lcd.collectAsState()
+            val imageBitmap = remember(frame.version) { frame.bitmap.asImageBitmap() }
             Image(
-                bitmap = frame.bitmap.asImageBitmap(),
+                bitmap = imageBitmap,
                 contentDescription = "Calculator display",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
@@ -209,7 +202,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
         // ── Softkey row ──────────────────────────────────────────────────────
         // Softkey codes are single-char "1".."6"; determineFunctionKeyItem_C47
         // converts to 0..5 via `*(data) - '0' - 1` (keyboard.c:22).
-        BtnRow(height = 32.dp) {
+        BtnRow(height = 36.dp) {
             for (c in 1..6) {
                 Key("", v = BtnVariant.Softkey,
                     keyCode = "$c", onKeyDown = onDown, onKeyUp = onUp)
@@ -271,7 +264,7 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             Key("x\u21C4y",  corner = "K", w = 1f, fsize = 12.sp, keyCode = "13", onKeyDown = onDown, onKeyUp = onUp)
             Key("CHS",       corner = "L", w = 1f, fsize = 14.sp, keyCode = "14", onKeyDown = onDown, onKeyUp = onUp)
             Key("EEX",       corner = "M", w = 1f, fsize = 14.sp, keyCode = "15", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u2190",    w = 1f, fsize = 20.sp, keyCode = "16", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2190",    w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "16", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── α/GTO row ─────────────────────────────────────────────────────
@@ -284,10 +277,10 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
         }
         BtnRow {
             Key("XEQ",       w = 1f, fsize = 16.sp, keyCode = "17", onKeyDown = onDown, onKeyUp = onUp)
-            Key("7",         corner = "N", w = 1f, fsize = 18.sp, keyCode = "18", onKeyDown = onDown, onKeyUp = onUp)
-            Key("8",         corner = "O", w = 1f, fsize = 18.sp, keyCode = "19", onKeyDown = onDown, onKeyUp = onUp)
-            Key("9",         corner = "P", w = 1f, fsize = 18.sp, keyCode = "20", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u00F7",    corner = "Q", w = 1f, fsize = 20.sp, keyCode = "21", onKeyDown = onDown, onKeyUp = onUp)
+            Key("7",         corner = "N", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "18", onKeyDown = onDown, onKeyUp = onUp)
+            Key("8",         corner = "O", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "19", onKeyDown = onDown, onKeyUp = onUp)
+            Key("9",         corner = "P", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "20", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00F7",    corner = "Q", w = 1f, fsize = 22.sp, font = C47Numeric, keyCode = "21", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── ≡↑/REGS row ───────────────────────────────────────────────────
@@ -299,11 +292,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT2("EQN", "ADV") }
         }
         BtnRow {
-            Key("\u2191",    w = 1f, fsize = 22.sp, keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
-            Key("4",         corner = "R", w = 1f, fsize = 18.sp, keyCode = "23", onKeyDown = onDown, onKeyUp = onUp)
-            Key("5",         corner = "S", w = 1f, fsize = 18.sp, keyCode = "24", onKeyDown = onDown, onKeyUp = onUp)
-            Key("6",         corner = "T", w = 1f, fsize = 18.sp, keyCode = "25", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u00D7",    corner = "U", w = 1f, fsize = 20.sp, keyCode = "26", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2191",    w = 1f, fsize = 24.sp, font = C47Numeric, keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
+            Key("4",         corner = "R", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "23", onKeyDown = onDown, onKeyUp = onUp)
+            Key("5",         corner = "S", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "24", onKeyDown = onDown, onKeyUp = onUp)
+            Key("6",         corner = "T", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "25", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00D7",    corner = "U", w = 1f, fsize = 22.sp, font = C47Numeric, keyCode = "26", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── ≡↓/FLGS row ───────────────────────────────────────────────────
@@ -315,11 +308,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT2("PROB", "FIN") }
         }
         BtnRow {
-            Key("\u2193",    w = 1f, fsize = 22.sp, keyCode = "27", onKeyDown = onDown, onKeyUp = onUp)
-            Key("1",         corner = "V", w = 1f, fsize = 18.sp, keyCode = "28", onKeyDown = onDown, onKeyUp = onUp)
-            Key("2",         corner = "W", w = 1f, fsize = 18.sp, keyCode = "29", onKeyDown = onDown, onKeyUp = onUp)
-            Key("3",         corner = "X", w = 1f, fsize = 18.sp, keyCode = "30", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u2212",    corner = "Y", w = 1f, fsize = 20.sp, keyCode = "31", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2193",    w = 1f, fsize = 24.sp, font = C47Numeric, keyCode = "27", onKeyDown = onDown, onKeyUp = onUp)
+            Key("1",         corner = "V", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "28", onKeyDown = onDown, onKeyUp = onUp)
+            Key("2",         corner = "W", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "29", onKeyDown = onDown, onKeyUp = onUp)
+            Key("3",         corner = "X", w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "30", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2212",    corner = "Y", w = 1f, fsize = 22.sp, font = C47Numeric, keyCode = "31", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── EXIT row ──────────────────────────────────────────────────────
@@ -332,10 +325,10 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
         }
         BtnRow {
             Key("EXIT",      w = 1f, fsize = 16.sp, keyCode = "32", onKeyDown = onDown, onKeyUp = onUp)
-            Key("0",         corner = "Z",  w = 1f, fsize = 18.sp, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
+            Key("0",         corner = "Z",  w = 1f, fsize = 20.sp, font = C47Numeric, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00B7",    corner = ",",  w = 1f, fsize = 26.sp, font = C47Numeric, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
             Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp, keyCode = "35", onKeyDown = onDown, onKeyUp = onUp)
-            Key("+",         corner = "\u21B5", w = 1f, fsize = 20.sp, keyCode = "36", onKeyDown = onDown, onKeyUp = onUp)
+            Key("+",         corner = "\u21B5", w = 1f, fsize = 22.sp, font = C47Numeric, keyCode = "36", onKeyDown = onDown, onKeyUp = onUp)
         }
     }
 }
@@ -376,20 +369,25 @@ private fun RowScope.Key(
     w: Float = 1f,
     v: BtnVariant = BtnVariant.Normal,
     fsize: TextUnit = 13.sp,
+    font: FontFamily = C47Standard,
     keyCode: String? = null,
     onKeyDown: ((String) -> Unit)? = null,
     onKeyUp: ((String) -> Unit)? = null,
 ) {
-    val src = remember { MutableInteractionSource() }
-    val pressed by src.collectIsPressedAsState()
+    // Owned press state. Read only inside the Canvas draw block so a flip
+    // invalidates just the draw pass — never recomposes Key. The
+    // MutableInteractionSource + collectIsPressedAsState path stalled main
+    // ~270 ms per flip on this device via Compose recomposition + re-layout
+    // of the pressed subtree.
+    val pressed = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val view = LocalView.current
 
-    val (fTop, fBot, depth) = when (v) {
-        BtnVariant.Normal  -> Triple(BtnFaceTop,    BtnFaceBot,    BtnDepth)
-        BtnVariant.Softkey -> Triple(BtnSkFaceTop,  BtnSkFaceBot,  BtnSkDepth)
-        BtnVariant.Orange  -> Triple(BtnOrgFaceTop, BtnOrgFaceBot, BtnOrgDepth)
-        BtnVariant.Blue    -> Triple(BtnBluFaceTop, BtnBluFaceBot, BtnBluDepth)
+    val (fTop, depth) = when (v) {
+        BtnVariant.Normal  -> BtnFaceTop    to BtnDepth
+        BtnVariant.Softkey -> BtnSkFaceTop  to BtnSkDepth
+        BtnVariant.Orange  -> BtnOrgFaceTop to BtnOrgDepth
+        BtnVariant.Blue    -> BtnBluFaceTop to BtnBluDepth
     }
 
     // Outer cell (full width, no clip) — corner letter sits OUTSIDE the
@@ -406,32 +404,42 @@ private fun RowScope.Key(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 4.dp, vertical = 3.dp)
+                .padding(horizontal = 5.dp, vertical = 4.dp)
                 .clip(RoundedCornerShape(CORNER_DP.dp))
                 .pointerInput(keyCode, onKeyDown, onKeyUp) {
                     detectTapGestures(
-                        onPress = { offset ->
-                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                            val press = PressInteraction.Press(offset)
-                            src.emitPress(scope, press)
+                        onPress = { _ ->
+                            Trace.beginSection("c47:onPress")
+                            scope.launch(Dispatchers.Default) {
+                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            }
+                            pressed.value = true
                             keyCode?.let { onKeyDown?.invoke(it) }
-                            val released = tryAwaitRelease()
+                            Trace.endSection()
+                            tryAwaitRelease()
+                            Trace.beginSection("c47:onRelease")
                             keyCode?.let { onKeyUp?.invoke(it) }
-                            src.emitRelease(scope, press, released)
+                            pressed.value = false
+                            Trace.endSection()
                         }
                     )
                 },
             contentAlignment = Alignment.Center
         ) {
-            // ── Canvas: depth shadow + gradient face + highlight ───────────
+            // Face draw. `pressed.value` is read inside the draw block so a
+            // flip only invalidates this draw pass — no recomposition, no
+            // re-layout. Avoid Modifier.graphicsLayer here: reading state
+            // inside its block triggered a ~270 ms main-thread stall per
+            // flip on this device (layer invalidation path is unexpectedly
+            // expensive). drawBehind-style state reads are fine.
             Canvas(Modifier.fillMaxSize()) {
+                val p = pressed.value
                 val cr   = CornerRadius(CORNER_DP.dp.toPx())
                 val dH   = size.height * DEPTH_PX_FRACTION
-                val faceY = if (pressed) dH else 0f
+                val faceY = if (p) dH else 0f
                 val faceH = size.height - dH
 
-                // 1. Depth / side-wall layer  (only when not pressed)
-                if (!pressed) {
+                if (!p) {
                     drawRoundRect(
                         color = depth,
                         topLeft = Offset(0f, dH * 0.55f),
@@ -440,20 +448,14 @@ private fun RowScope.Key(
                     )
                 }
 
-                // 2. Button face with vertical gradient
                 drawRoundRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(fTop, fBot),
-                        startY = faceY,
-                        endY   = faceY + faceH
-                    ),
+                    color = fTop,
                     topLeft = Offset(0f, faceY),
                     size = Size(size.width, faceH),
                     cornerRadius = cr
                 )
 
-                // 3. Specular highlight line along top edge
-                if (!pressed) {
+                if (!p) {
                     drawLine(
                         color = Color.White.copy(alpha = 0.18f),
                         start = Offset(CORNER_DP.dp.toPx() * 0.6f, faceY + 1.5f),
@@ -462,30 +464,25 @@ private fun RowScope.Key(
                     )
                 }
 
-                // 4. Very subtle bottom-edge darkening on the face
                 drawRoundRect(
-                    color = Color.Black.copy(alpha = if (pressed) 0.0f else 0.25f),
+                    color = Color.Black.copy(alpha = if (p) 0.0f else 0.25f),
                     topLeft = Offset(0f, faceY + faceH * 0.65f),
                     size = Size(size.width, faceH * 0.35f),
                     cornerRadius = cr
                 )
             }
 
-            // ── Label text ─────────────────────────────────────────────────
-            val textYOffset = if (pressed)
-                (DEPTH_PX_FRACTION * 22 * 0.5f).dp   // sink down with the face
-            else
-                -(DEPTH_PX_FRACTION * 44 * 0.5f).dp  // float up on raised face
-
+            // Label offset tracks the face. graphicsLayer reads state inside
+            // its block at draw time, so the translation updates without
+            // recomposing or re-laying out the Text.
             Text(
                 text = label,
                 modifier = Modifier
-                    .offset(y = textYOffset)
                     .padding(horizontal = 3.dp),
                 color = LabelWhite,
-                fontFamily = C47Standard,
+                fontFamily = font,
                 fontSize = fsize,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Clip
@@ -498,7 +495,7 @@ private fun RowScope.Key(
                 text = corner,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 0.dp, bottom = 0.dp),
+                    .padding(end = 1.dp, bottom = 1.dp),
                 color = CornerChar,
                 fontFamily = C47Tiny,
                 fontSize = 8.sp,
@@ -669,29 +666,6 @@ private fun RowScope.SMix2(
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// InteractionSource emit helpers — detectTapGestures runs on a PointerInput
-// scope, which is a coroutine but not a CoroutineScope; bridge via the
-// composable's rememberCoroutineScope so the press animation fires.
-// ─────────────────────────────────────────────────────────────────────────────
-
-private fun MutableInteractionSource.emitPress(
-    scope: CoroutineScope,
-    press: PressInteraction.Press,
-) {
-    scope.launch { emit(press) }
-}
-
-private fun MutableInteractionSource.emitRelease(
-    scope: CoroutineScope,
-    press: PressInteraction.Press,
-    released: Boolean,
-) {
-    scope.launch {
-        emit(if (released) PressInteraction.Release(press) else PressInteraction.Cancel(press))
     }
 }
 
