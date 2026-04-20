@@ -258,14 +258,14 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── α/GTO row ─────────────────────────────────────────────────────
         SRow {
-            SMC(w = 2f) { BoxTFilled("\u03B1"); MixT(" GTO", LabelWhite) }
+            SMC(w = 1f) { BoxTFilled("\u03B1"); MixT(" GTO", LabelWhite) }
             SMix2("SIN", "ASIN", w = 1f)
             SMix2("COS", "ACOS", w = 1f)
             SMix2("TAN", "ATAN", w = 1f)
             SMC(w = 1f) { BoxT2("STAT", "PLOT") }
         }
         BtnRow {
-            Key("XEQ",       w = 2f, fsize = 16.sp, keyCode = "17", onKeyDown = onDown, onKeyUp = onUp)
+            Key("XEQ",       w = 1f, fsize = 16.sp, keyCode = "17", onKeyDown = onDown, onKeyUp = onUp)
             Key("7",         corner = "N", w = 1f, fsize = 18.sp, keyCode = "18", onKeyDown = onDown, onKeyUp = onUp)
             Key("8",         corner = "O", w = 1f, fsize = 18.sp, keyCode = "19", onKeyDown = onDown, onKeyUp = onUp)
             Key("9",         corner = "P", w = 1f, fsize = 18.sp, keyCode = "20", onKeyDown = onDown, onKeyUp = onUp)
@@ -274,14 +274,14 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── ≡↑/REGS row ───────────────────────────────────────────────────
         SRow {
-            SMC(w = 2f) { MixT("\u2261\u2191 ", ShiftOrange); MixT("REGS", LabelWhite) }
+            SMC(w = 1f) { MixT("\u2261\u2191 ", ShiftOrange); MixT("REGS", LabelWhite) }
             SMC(w = 1f) { BoxT2("BASE", "BITS") }
             SMC(w = 1f) { BoxT2("INTS", "REAL") }
             SMC(w = 1f) { BoxT2("MATX", "X.FN") }
             SMC(w = 1f) { BoxT2("EQN", "ADV") }
         }
         BtnRow {
-            Key("\u2191",    w = 2f, fsize = 22.sp, keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2191",    w = 1f, fsize = 22.sp, keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
             Key("4",         corner = "R", w = 1f, fsize = 18.sp, keyCode = "23", onKeyDown = onDown, onKeyUp = onUp)
             Key("5",         corner = "S", w = 1f, fsize = 18.sp, keyCode = "24", onKeyDown = onDown, onKeyUp = onUp)
             Key("6",         corner = "T", w = 1f, fsize = 18.sp, keyCode = "25", onKeyDown = onDown, onKeyUp = onUp)
@@ -290,14 +290,14 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── ≡↓/FLGS row ───────────────────────────────────────────────────
         SRow {
-            SMC(w = 2f) { MixT("\u2261\u2193 ", ShiftOrange); MixT("FLGS", LabelWhite) }
+            SMC(w = 1f) { MixT("\u2261\u2193 ", ShiftOrange); MixT("FLGS", LabelWhite) }
             SMC(w = 1f) { BoxT2("PREF", "KEYS") }
             SMC(w = 1f) { BoxT2("CONV", "CLK") }
             SMC(w = 1f) { BoxT2("FLAG", "\u03B1.FN") }
             SMC(w = 1f) { BoxT2("PROB", "FIN") }
         }
         BtnRow {
-            Key("\u2193",    w = 2f, fsize = 22.sp, keyCode = "27", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2193",    w = 1f, fsize = 22.sp, keyCode = "27", onKeyDown = onDown, onKeyUp = onUp)
             Key("1",         corner = "V", w = 1f, fsize = 18.sp, keyCode = "28", onKeyDown = onDown, onKeyUp = onUp)
             Key("2",         corner = "W", w = 1f, fsize = 18.sp, keyCode = "29", onKeyDown = onDown, onKeyUp = onUp)
             Key("3",         corner = "X", w = 1f, fsize = 18.sp, keyCode = "30", onKeyDown = onDown, onKeyUp = onUp)
@@ -306,14 +306,14 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
 
         // ── EXIT row ──────────────────────────────────────────────────────
         SRow {
-            SMC(w = 2f) { MixT("\u23FB ", ShiftOrange); BoxT("INFO") }
+            SMC(w = 1f) { MixT("\u23FB ", ShiftOrange); BoxT("INFO") }
             SMC(w = 1f) { MixT("VIEW ", LabelWhite); BoxT("I/O") }
             SMC(w = 1f) { MixT("SHOW ", LabelWhite); BoxT("ab/c") }
             SMC(w = 1f) { MixT("PRGM ", LabelWhite); BoxT("P.FN") }
             SMC(w = 1f) { BoxT2("CAT", "CNST") }
         }
         BtnRow {
-            Key("EXIT",      w = 2f, fsize = 16.sp, keyCode = "32", onKeyDown = onDown, onKeyUp = onUp)
+            Key("EXIT",      w = 1f, fsize = 16.sp, keyCode = "32", onKeyDown = onDown, onKeyUp = onUp)
             Key("0",         corner = "Z",  w = 1f, fsize = 18.sp, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
             Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
             Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp, keyCode = "35", onKeyDown = onDown, onKeyUp = onUp)
