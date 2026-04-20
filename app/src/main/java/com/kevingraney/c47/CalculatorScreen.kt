@@ -175,14 +175,19 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
     Column(Modifier.fillMaxWidth()) {
 
         // ── Softkey row ──────────────────────────────────────────────────────
+        // Softkey codes are single-char "1".."6"; determineFunctionKeyItem_C47
+        // converts to 0..5 via `*(data) - '0' - 1` (keyboard.c:22).
         BtnRow(height = 32.dp) {
             for (c in 1..6) {
                 Key("", v = BtnVariant.Softkey,
-                    keyCode = "0$c", onKeyDown = onDown, onKeyUp = onUp)
+                    keyCode = "$c", onKeyDown = onDown, onKeyUp = onUp)
             }
         }
 
         // ── Row 1 ─ x², √x, 1/x, yˣ, LOG, LN ────────────────────────────
+        // Data keys are 2-char flat indices "00".."36" into kbd_std_R47f_g
+        // (assign.c:368). btnPressed parses via stringToKeyNumber at
+        // keyboard.c:1440. Row 1 = entries 0..5.
         SRow {
             SC("i \u2192R",    ShiftOrange, italic = true)
             SC("i\u2080\u2192P", ShiftOrange, italic = true)
@@ -192,12 +197,12 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SC("e\u02E3 #",   ShiftOrange, italic = true)
         }
         BtnRow {
-            Key("x\u00B2",  corner = "A", keyCode = "11", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u221Ax",   corner = "B", keyCode = "12", onKeyDown = onDown, onKeyUp = onUp)
-            Key("1/x",       corner = "C", keyCode = "13", onKeyDown = onDown, onKeyUp = onUp)
-            Key("y\u02E3",   corner = "D", keyCode = "14", onKeyDown = onDown, onKeyUp = onUp)
-            Key("LOG",       corner = "E", keyCode = "15", onKeyDown = onDown, onKeyUp = onUp)
-            Key("LN",        corner = "F", keyCode = "16", onKeyDown = onDown, onKeyUp = onUp)
+            Key("x\u00B2",  corner = "A", keyCode = "00", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u221Ax",   corner = "B", keyCode = "01", onKeyDown = onDown, onKeyUp = onUp)
+            Key("1/x",       corner = "C", keyCode = "02", onKeyDown = onDown, onKeyUp = onUp)
+            Key("y\u02E3",   corner = "D", keyCode = "03", onKeyDown = onDown, onKeyUp = onUp)
+            Key("LOG",       corner = "E", keyCode = "04", onKeyDown = onDown, onKeyUp = onUp)
+            Key("LN",        corner = "F", keyCode = "05", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── Row 2 ─ STO, RCL, R↓, DRG, [orange], [blue] ─────────────────
@@ -210,12 +215,12 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SC("CUST",       ShiftBlue, italic = true)
         }
         BtnRow {
-            Key("STO",       corner = "G", keyCode = "21", onKeyDown = onDown, onKeyUp = onUp)
-            Key("RCL",       corner = "H", keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
-            Key("R\u2193",   corner = "I", keyCode = "23", onKeyDown = onDown, onKeyUp = onUp)
-            Key("DRG",       corner = "J", keyCode = "24", onKeyDown = onDown, onKeyUp = onUp)
-            Key("",          v = BtnVariant.Orange, keyCode = "25", onKeyDown = onDown, onKeyUp = onUp)
-            Key("",          v = BtnVariant.Blue,   keyCode = "26", onKeyDown = onDown, onKeyUp = onUp)
+            Key("STO",       corner = "G", keyCode = "06", onKeyDown = onDown, onKeyUp = onUp)
+            Key("RCL",       corner = "H", keyCode = "07", onKeyDown = onDown, onKeyUp = onUp)
+            Key("R\u2193",   corner = "I", keyCode = "08", onKeyDown = onDown, onKeyUp = onUp)
+            Key("DRG",       corner = "J", keyCode = "09", onKeyDown = onDown, onKeyUp = onUp)
+            Key("",          v = BtnVariant.Orange, keyCode = "10", onKeyDown = onDown, onKeyUp = onUp)
+            Key("",          v = BtnVariant.Blue,   keyCode = "11", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── COMPLEX/ENTER row ─────────────────────────────────────────────
@@ -228,11 +233,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT("CLR") }
         }
         BtnRow {
-            Key("ENTER",     w = 2f, fsize = 16.sp, keyCode = "31", onKeyDown = onDown, onKeyUp = onUp)
-            Key("x\u21C4y",  corner = "K", w = 1f, fsize = 12.sp, keyCode = "32", onKeyDown = onDown, onKeyUp = onUp)
-            Key("CHS",       corner = "L", w = 1f, fsize = 14.sp, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
-            Key("EEX",       corner = "M", w = 1f, fsize = 14.sp, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u2190",    w = 1f, fsize = 20.sp, keyCode = "35", onKeyDown = onDown, onKeyUp = onUp)
+            Key("ENTER",     w = 2f, fsize = 16.sp, keyCode = "12", onKeyDown = onDown, onKeyUp = onUp)
+            Key("x\u21C4y",  corner = "K", w = 1f, fsize = 12.sp, keyCode = "13", onKeyDown = onDown, onKeyUp = onUp)
+            Key("CHS",       corner = "L", w = 1f, fsize = 14.sp, keyCode = "14", onKeyDown = onDown, onKeyUp = onUp)
+            Key("EEX",       corner = "M", w = 1f, fsize = 14.sp, keyCode = "15", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2190",    w = 1f, fsize = 20.sp, keyCode = "16", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── α/GTO row ─────────────────────────────────────────────────────
@@ -244,11 +249,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT2("STAT", "PLOT") }
         }
         BtnRow {
-            Key("XEQ",       w = 2f, fsize = 16.sp, keyCode = "41", onKeyDown = onDown, onKeyUp = onUp)
-            Key("7",         corner = "N", w = 1f, fsize = 18.sp, keyCode = "42", onKeyDown = onDown, onKeyUp = onUp)
-            Key("8",         corner = "O", w = 1f, fsize = 18.sp, keyCode = "43", onKeyDown = onDown, onKeyUp = onUp)
-            Key("9",         corner = "P", w = 1f, fsize = 18.sp, keyCode = "44", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u00F7",    corner = "Q", w = 1f, fsize = 20.sp, keyCode = "45", onKeyDown = onDown, onKeyUp = onUp)
+            Key("XEQ",       w = 2f, fsize = 16.sp, keyCode = "17", onKeyDown = onDown, onKeyUp = onUp)
+            Key("7",         corner = "N", w = 1f, fsize = 18.sp, keyCode = "18", onKeyDown = onDown, onKeyUp = onUp)
+            Key("8",         corner = "O", w = 1f, fsize = 18.sp, keyCode = "19", onKeyDown = onDown, onKeyUp = onUp)
+            Key("9",         corner = "P", w = 1f, fsize = 18.sp, keyCode = "20", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00F7",    corner = "Q", w = 1f, fsize = 20.sp, keyCode = "21", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── ≡↑/REGS row ───────────────────────────────────────────────────
@@ -260,11 +265,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT2("EQN", "ADV") }
         }
         BtnRow {
-            Key("\u2191",    w = 2f, fsize = 22.sp, keyCode = "51", onKeyDown = onDown, onKeyUp = onUp)
-            Key("4",         corner = "R", w = 1f, fsize = 18.sp, keyCode = "52", onKeyDown = onDown, onKeyUp = onUp)
-            Key("5",         corner = "S", w = 1f, fsize = 18.sp, keyCode = "53", onKeyDown = onDown, onKeyUp = onUp)
-            Key("6",         corner = "T", w = 1f, fsize = 18.sp, keyCode = "54", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u00D7",    corner = "U", w = 1f, fsize = 20.sp, keyCode = "55", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2191",    w = 2f, fsize = 22.sp, keyCode = "22", onKeyDown = onDown, onKeyUp = onUp)
+            Key("4",         corner = "R", w = 1f, fsize = 18.sp, keyCode = "23", onKeyDown = onDown, onKeyUp = onUp)
+            Key("5",         corner = "S", w = 1f, fsize = 18.sp, keyCode = "24", onKeyDown = onDown, onKeyUp = onUp)
+            Key("6",         corner = "T", w = 1f, fsize = 18.sp, keyCode = "25", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00D7",    corner = "U", w = 1f, fsize = 20.sp, keyCode = "26", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── ≡↓/FLGS row ───────────────────────────────────────────────────
@@ -276,11 +281,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT2("PROB", "FIN") }
         }
         BtnRow {
-            Key("\u2193",    w = 2f, fsize = 22.sp, keyCode = "61", onKeyDown = onDown, onKeyUp = onUp)
-            Key("1",         corner = "V", w = 1f, fsize = 18.sp, keyCode = "62", onKeyDown = onDown, onKeyUp = onUp)
-            Key("2",         corner = "W", w = 1f, fsize = 18.sp, keyCode = "63", onKeyDown = onDown, onKeyUp = onUp)
-            Key("3",         corner = "X", w = 1f, fsize = 18.sp, keyCode = "64", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u2212",    corner = "Y", w = 1f, fsize = 20.sp, keyCode = "65", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2193",    w = 2f, fsize = 22.sp, keyCode = "27", onKeyDown = onDown, onKeyUp = onUp)
+            Key("1",         corner = "V", w = 1f, fsize = 18.sp, keyCode = "28", onKeyDown = onDown, onKeyUp = onUp)
+            Key("2",         corner = "W", w = 1f, fsize = 18.sp, keyCode = "29", onKeyDown = onDown, onKeyUp = onUp)
+            Key("3",         corner = "X", w = 1f, fsize = 18.sp, keyCode = "30", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u2212",    corner = "Y", w = 1f, fsize = 20.sp, keyCode = "31", onKeyDown = onDown, onKeyUp = onUp)
         }
 
         // ── EXIT row ──────────────────────────────────────────────────────
@@ -292,11 +297,11 @@ private fun CalcKeyboard(vm: CalculatorViewModel? = null) {
             SMC(w = 1f) { BoxT2("CAT", "CNST") }
         }
         BtnRow {
-            Key("EXIT",      w = 2f, fsize = 16.sp, keyCode = "71", onKeyDown = onDown, onKeyUp = onUp)
-            Key("0",         corner = "Z",  w = 1f, fsize = 18.sp, keyCode = "72", onKeyDown = onDown, onKeyUp = onUp)
-            Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp, keyCode = "73", onKeyDown = onDown, onKeyUp = onUp)
-            Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp, keyCode = "74", onKeyDown = onDown, onKeyUp = onUp)
-            Key("+",         corner = "\u23CE", w = 1f, fsize = 20.sp, keyCode = "75", onKeyDown = onDown, onKeyUp = onUp)
+            Key("EXIT",      w = 2f, fsize = 16.sp, keyCode = "32", onKeyDown = onDown, onKeyUp = onUp)
+            Key("0",         corner = "Z",  w = 1f, fsize = 18.sp, keyCode = "33", onKeyDown = onDown, onKeyUp = onUp)
+            Key("\u00B7",    corner = ",",  w = 1f, fsize = 24.sp, keyCode = "34", onKeyDown = onDown, onKeyUp = onUp)
+            Key("R/S",       corner = "?",  w = 1f, fsize = 13.sp, keyCode = "35", onKeyDown = onDown, onKeyUp = onUp)
+            Key("+",         corner = "\u23CE", w = 1f, fsize = 20.sp, keyCode = "36", onKeyDown = onDown, onKeyUp = onUp)
         }
     }
 }

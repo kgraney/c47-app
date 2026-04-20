@@ -16,8 +16,10 @@ class C47Engine {
 
     fun init(stateDir: File) = nativeInit(stateDir.absolutePath)
 
-    fun keyDown(row: Int, col: Int) = nativeKeyDown(row, col)
-    fun keyUp(row: Int, col: Int) = nativeKeyUp(row, col)
+    // `key` is engine-native: 2-char "00".."36" for data keys, single char
+    // "1".."6" for softkeys. JNI dispatches by length.
+    fun keyDown(key: String) = nativeKeyDown(key)
+    fun keyUp(key: String) = nativeKeyUp(key)
 
     fun readLcd(buf: ByteArray): Boolean = nativeReadLcd(buf)
 
@@ -25,8 +27,8 @@ class C47Engine {
     fun restore() = nativeRestore()
 
     private external fun nativeInit(stateDir: String)
-    private external fun nativeKeyDown(row: Int, col: Int)
-    private external fun nativeKeyUp(row: Int, col: Int)
+    private external fun nativeKeyDown(key: String)
+    private external fun nativeKeyUp(key: String)
     private external fun nativeReadLcd(out: ByteArray): Boolean
     private external fun nativeSave()
     private external fun nativeRestore()

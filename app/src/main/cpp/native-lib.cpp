@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // JNI bridge between the Compose UI and the vendored C47 engine.
 //
-// Phase 2: the dispatch shape is final (row/col -> "%02d" key string,
-// softkey row 0 -> btnFnPressed, data rows -> btnPressed). The engine
-// calls themselves are guarded by C47_ENGINE_LINKED and stubbed until
-// GMP + src/generated/ land.
+// Keys arrive in engine-native form: 2-char flat index "00".."36" for data
+// keys (dispatched to btnPressed / btnReleased), or single char "1".."6"
+// for softkeys F1..F6 (dispatched to btnFnPressed / btnFnReleased).
 
 #include <jni.h>
 #include <android/log.h>
@@ -31,18 +30,40 @@ extern "C" {
   void saveCalc     (void);
   void restoreCalc  (void);
 
+  // Timer subsystem (c43-source/src/c47/timer.c). TMR_NUMBER == 11; the
+  // constants below mirror defines.h:1371-1384.
+  void fnTimerReset (void);
+  void fnTimerConfig(unsigned char nr, void (*func)(unsigned short), unsigned short param);
+  void fnTimerDummy1       (unsigned short param);
+  void fnTimerEndOfActivity(unsigned short param);
+  void refreshFn     (unsigned short timerType);   // screen.c
+  void execTimerApp  (unsigned short timerType);   // screen.c
+  void execFnTimeout (unsigned short key);         // c47Extensions/keyboardTweak.c
+  void shiftCutoff   (unsigned short param);       // c47Extensions/keyboardTweak.c
+  void execAutoRepeat(unsigned short key);         // keyboard.c
+
   // Android HAL hooks (c43-source/src/c47-android/hal/)
   void c47_android_set_state_dir(const char *dir);
   void c47_android_lcd_init(void);
   int  c47_android_lcd_take_dirty(void);
   void c47_android_lcd_copy_to(unsigned char *out);
 }
-#endif // C47_ENGINE_LINKED
 
-static void format_key(int row, int col, char out[3]) {
-  std::snprintf(out, 3, "%d%d", row, col);
-  out[2] = '\0';
-}
+// Timer slot IDs — must match c43-source/src/c47/defines.h:1374-1384.
+enum {
+  TO_FG_LONG     = 0,
+  TO_CL_LONG     = 1,
+  TO_FG_TIMR     = 2,
+  TO_FN_LONG     = 3,
+  TO_FN_EXEC     = 4,
+  TO_3S_CTFF     = 5,
+  TO_CL_DROP     = 6,
+  TO_AUTO_REPEAT = 7,
+  TO_TIMER_APP   = 8,
+  TO_ASM_ACTIVE  = 9,
+  TO_KB_ACTV     = 10,
+};
+#endif // C47_ENGINE_LINKED
 
 extern "C" {
 
@@ -54,8 +75,26 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeInit(
 #if defined(C47_ENGINE_LINKED)
     c47_android_set_state_dir(path);
     c47_android_lcd_init();
-    // Either restore prior state or start clean. restoreCalc() no-ops when
-    // the save file doesn't exist.
+
+    // Timer callback table — normally wired up in program_main() (c47.c:753-
+    // 764), which is gated on DMCP_BUILD and so never runs for us. Without
+    // this, the first softkey release arms TO_FN_EXEC with a NULL .func, and
+    // the next softkey press crashes in fnTimerExec.
+    fnTimerReset();
+    fnTimerConfig(TO_FG_LONG,     refreshFn,            TO_FG_LONG);
+    fnTimerConfig(TO_CL_LONG,     refreshFn,            TO_CL_LONG);
+    fnTimerConfig(TO_FG_TIMR,     refreshFn,            TO_FG_TIMR);
+    fnTimerConfig(TO_FN_LONG,     refreshFn,            TO_FN_LONG);
+    fnTimerConfig(TO_FN_EXEC,     execFnTimeout,        0);
+    fnTimerConfig(TO_3S_CTFF,     shiftCutoff,          TO_3S_CTFF);
+    fnTimerConfig(TO_CL_DROP,     fnTimerDummy1,        TO_CL_DROP);
+    fnTimerConfig(TO_AUTO_REPEAT, execAutoRepeat,       0);
+    fnTimerConfig(TO_TIMER_APP,   execTimerApp,         0);
+    fnTimerConfig(TO_ASM_ACTIVE,  refreshFn,            TO_ASM_ACTIVE);
+    fnTimerConfig(TO_KB_ACTV,     fnTimerEndOfActivity, TO_KB_ACTV);
+
+    // Either restore prior state or start clean. restoreCalc() internally
+    // calls doFnReset(CONFIRMED) when the save file is missing.
     restoreCalc();
 #else
     LOGI("  (engine not linked — see CMakeLists for C47_ENGINE_LINKED)");
@@ -65,30 +104,42 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeInit(
 
 JNIEXPORT void JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeKeyDown(
-        JNIEnv* /*env*/, jobject /*thiz*/, jint row, jint col) {
-    char key[3];
-    format_key(row, col, key);
+        JNIEnv* env, jobject /*thiz*/, jstring jkey) {
+    const char* src = env->GetStringUTFChars(jkey, nullptr);
+    char key[3] = {0};
+    // Copy up to 2 chars — longer strings are silently truncated, but the
+    // UI only ever sends length-1 (softkey) or length-2 (data key).
+    std::strncpy(key, src, 2);
+    const size_t len = std::strlen(key);
+    env->ReleaseStringUTFChars(jkey, src);
     LOGI("nativeKeyDown %s", key);
 #if defined(C47_ENGINE_LINKED)
-    if (row == 0) {
-        btnFnPressed(key);   // softkey row: F1..F6
+    if (len == 1) {
+        btnFnPressed(key);   // softkey F1..F6
+    } else if (len == 2) {
+        btnPressed(key);     // data key flat index 00..36
     } else {
-        btnPressed(key);     // data rows
+        LOGW("nativeKeyDown: unexpected key length %zu", len);
     }
 #endif
 }
 
 JNIEXPORT void JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeKeyUp(
-        JNIEnv* /*env*/, jobject /*thiz*/, jint row, jint col) {
-    char key[3];
-    format_key(row, col, key);
+        JNIEnv* env, jobject /*thiz*/, jstring jkey) {
+    const char* src = env->GetStringUTFChars(jkey, nullptr);
+    char key[3] = {0};
+    std::strncpy(key, src, 2);
+    const size_t len = std::strlen(key);
+    env->ReleaseStringUTFChars(jkey, src);
     LOGI("nativeKeyUp %s", key);
 #if defined(C47_ENGINE_LINKED)
-    if (row == 0) {
+    if (len == 1) {
         btnFnReleased(key);
-    } else {
+    } else if (len == 2) {
         btnReleased(key);
+    } else {
+        LOGW("nativeKeyUp: unexpected key length %zu", len);
     }
 #endif
 }
