@@ -111,7 +111,7 @@ class CalculatorViewModel(
         Trace.beginSection("c47:tickAndRender")
         try {
             engine.tick()
-            val dirty = engine.renderArgb(argbBuffer, PIXEL_ON_ARGB, PIXEL_OFF_ARGB)
+            val dirty = engine.renderArgb(argbBuffer, PIXEL_ON_PIX, PIXEL_OFF_PIX)
             if (dirty && LCD_EMIT_ENABLED) {
                 argbBuffer.rewind()
                 back.copyPixelsFromBuffer(argbBuffer)
@@ -157,9 +157,19 @@ class CalculatorViewModel(
         private const val TAG = "c47-vm"
 
         // Palette matches CalculatorDisplayView — parchment off, near-black on.
-        // Stored pre-packed as ARGB_8888 ints for the native renderer.
+        //
+        // PIXEL_*_ARGB is for Bitmap.eraseColor, which takes AARRGGBB.
+        //
+        // PIXEL_*_PIX is the same color pre-packed for the native renderer,
+        // which stores uint32s directly into a little-endian direct buffer
+        // that Bitmap.copyPixelsFromBuffer reads as RGBA_8888 (bytes R,G,B,A
+        // in memory). On LE that means the int is A<<24|B<<16|G<<8|R —
+        // i.e. ARGB with R and B swapped. Without this swap the parchment
+        // off-pixel renders as light blue.
         private const val PIXEL_OFF_ARGB = 0xFFD2C89A.toInt()
         private const val PIXEL_ON_ARGB  = 0xFF1A1A1A.toInt()
+        private const val PIXEL_OFF_PIX  = 0xFF9AC8D2.toInt()
+        private const val PIXEL_ON_PIX   = 0xFF1A1A1A.toInt()  // monochrome, no swap
 
         private const val BACKGROUND_PUMP_INTERVAL_MS = 100L
 
