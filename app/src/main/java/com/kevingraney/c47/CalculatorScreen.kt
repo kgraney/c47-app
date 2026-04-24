@@ -110,7 +110,7 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Display unit — single dark bezel rectangle containing the SwissMicros/R47
+// Display unit — single dark bezel rectangle containing the C47 Calc/R47
 // header strip directly above the cream LCD area (matches r47.gif, where the
 // branding text sits on the display bezel rather than floating above it).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ private fun CalcDisplayUnit(vm: CalculatorViewModel? = null) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "SwissMicros",
+                "C47 Calc",
                 color = LabelWhite,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
