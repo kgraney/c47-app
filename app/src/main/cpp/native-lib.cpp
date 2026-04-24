@@ -63,6 +63,25 @@ extern "C" {
   int            c47_android_lcd_take_dirty(void);
   void           c47_android_lcd_copy_to(unsigned char *out);
   const uint8_t *c47_android_lcd_raw(void);
+
+  // Power-off image hooks (defined in c47-android/hal/lcd.c). The engine
+  // would call these from program_main's OFF state machine on DMCP, but
+  // program_main isn't run on Android — we invoke them from the UI.
+  void draw_power_off_image(int allow_errors);
+  void LCD_power_off(int clear);
+  void LCD_power_on(void);
+  void refreshScreen(unsigned short source);  // screen.c
+
+  // lcd_fill_rect primitive (c47-android/hal/lcd.c). Used on wake to wipe
+  // the off-image before the engine repaints — refreshScreen() on CM_NORMAL
+  // only touches the regions it manages (status bar, stack, menus), so
+  // pixels left over outside those regions would linger as artifacts.
+  void lcd_fill_rect(unsigned x, unsigned y, unsigned dx, unsigned dy, int val);
+
+  // Engine shift-state globals (c47.c:51-52). bool_t is `typedef bool bool_t`,
+  // 1-byte storage — safe to extern as unsigned char across the C/C++ seam.
+  extern unsigned char shiftF;
+  extern unsigned char shiftG;
 }
 
 // Timer slot IDs — must match c43-source/src/c47/defines.h:1374-1384.
@@ -219,6 +238,51 @@ Java_com_kevingraney_c47_engine_C47Engine_nativeRenderArgb(
     return JNI_TRUE;
 #else
     (void)env; (void)directBuffer; (void)onArgb; (void)offArgb;
+    return JNI_FALSE;
+#endif
+}
+
+// Paint the power-off image into the LCD framebuffer and mark the panel as
+// powered off. Matches the DMCP OFF transition (c47.c:923-932): draw the
+// branded splash, then cut panel power. UI layer should stop ticking the
+// engine until nativePowerOn fires.
+JNIEXPORT void JNICALL
+Java_com_kevingraney_c47_engine_C47Engine_nativePowerOff(
+        JNIEnv* /*env*/, jobject /*thiz*/) {
+    LOGI("nativePowerOff");
+#if defined(C47_ENGINE_LINKED)
+    draw_power_off_image(1);
+    LCD_power_off(0);
+#endif
+}
+
+// Restore panel power and force the engine to re-render the current screen.
+// Differs from the DMCP wake path (c47.c:945-953 lcd_forced_refresh) because
+// on real hardware the off-image is expected to briefly persist until the
+// next user action repaints. On Android we want a clean wake, so we wipe
+// the framebuffer to parchment (val=0 clears bits) before refreshScreen()
+// — otherwise decorative pixels from the off-image outside the regions
+// _refreshNormalScreen repaints (status bar / stack / menus) linger.
+JNIEXPORT void JNICALL
+Java_com_kevingraney_c47_engine_C47Engine_nativePowerOn(
+        JNIEnv* /*env*/, jobject /*thiz*/) {
+    LOGI("nativePowerOn");
+#if defined(C47_ENGINE_LINKED)
+    LCD_power_on();
+    lcd_fill_rect(0, 0, kScreenWidth, kScreenHeight, 0);
+    refreshScreen(0);
+#endif
+}
+
+// Report whether the orange (f) shift is currently armed. Used by the
+// UI to detect the f+EXIT = OFF combo — the engine handles shift state
+// internally, so we read it rather than tracking it on the Kotlin side.
+JNIEXPORT jboolean JNICALL
+Java_com_kevingraney_c47_engine_C47Engine_nativeShiftFArmed(
+        JNIEnv* /*env*/, jobject /*thiz*/) {
+#if defined(C47_ENGINE_LINKED)
+    return shiftF ? JNI_TRUE : JNI_FALSE;
+#else
     return JNI_FALSE;
 #endif
 }

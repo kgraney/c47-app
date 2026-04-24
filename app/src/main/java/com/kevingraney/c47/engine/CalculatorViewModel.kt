@@ -63,6 +63,19 @@ class CalculatorViewModel(
     private val _lcd = MutableStateFlow(LcdFrame(front, frameVersion))
     val lcd: StateFlow<LcdFrame> = _lcd.asStateFlow()
 
+    // Power state. When off, the off-image has been painted into the LCD
+    // framebuffer and the tick loop is gated — the engine keeps its
+    // internal state but doesn't redraw over the off-image. Any key press
+    // wakes the calculator before being forwarded to the engine.
+    private val _isPoweredOn = MutableStateFlow(true)
+    val isPoweredOn: StateFlow<Boolean> = _isPoweredOn.asStateFlow()
+
+    // Records the keycode that woke the calculator from the off state, so
+    // its matching key-up can be swallowed (the engine never saw the down,
+    // so it shouldn't see the up either — would confuse its held-key state).
+    // Touched only from the engine thread.
+    private var wakeKey: String? = null
+
     fun init(stateDir: File) {
         engineScope.launch {
             engine.init(stateDir)
@@ -70,15 +83,57 @@ class CalculatorViewModel(
         }
     }
 
+    // Toggle between the off-image and live engine rendering. Safe to call
+    // from any thread — dispatched onto the engine thread.
+    fun togglePower() {
+        engineScope.launch {
+            if (_isPoweredOn.value) doPowerOff() else doPowerOn()
+        }
+    }
+
+    // Must run on engineScope.
+    private fun doPowerOff() {
+        engine.powerOff()
+        _isPoweredOn.value = false
+        // powerOff marked the framebuffer dirty; emit the off-image frame.
+        emitIfDirty()
+    }
+
+    // Must run on engineScope.
+    private fun doPowerOn() {
+        _isPoweredOn.value = true
+        engine.powerOn()           // refreshScreen() repaints the live UI
+        emitIfDirty()
+    }
+
     fun onKeyDown(code: String) {
         val enqueued = SystemClock.uptimeMillis()
         engineScope.launch {
+            // Any key press while powered off wakes the calculator and is
+            // consumed (not forwarded) — matches hardware behavior.
+            if (!_isPoweredOn.value) {
+                wakeKey = code
+                doPowerOn()
+                return@launch
+            }
+            // HP-42S / R47 OFF combo: orange shift (f) + EXIT. The engine
+            // tracks shift-f state itself (c47.c:51 shiftF); peek at it
+            // before forwarding the EXIT keystroke, since the engine will
+            // clear shiftF as soon as it consumes the key.
+            val offCombo = code == KEY_EXIT && engine.isShiftFArmed()
             val started = SystemClock.uptimeMillis()
             val queueLag = started - enqueued
             Trace.beginSection("c47:keyDown+render")
             try {
                 engine.keyDown(code)
-                tickAndRender()
+                if (offCombo) {
+                    // Paint the off-image on top of whatever the engine
+                    // drew in response. Key-up is still forwarded below so
+                    // the engine's held-key bookkeeping stays balanced.
+                    doPowerOff()
+                } else {
+                    tickAndRender()
+                }
             } finally {
                 Trace.endSection()
             }
@@ -90,12 +145,20 @@ class CalculatorViewModel(
     fun onKeyUp(code: String) {
         val enqueued = SystemClock.uptimeMillis()
         engineScope.launch {
+            // Swallow the key-up that pairs with the wake keystroke — the
+            // engine never saw the down.
+            if (wakeKey == code) {
+                wakeKey = null
+                return@launch
+            }
             val started = SystemClock.uptimeMillis()
             val queueLag = started - enqueued
             Trace.beginSection("c47:keyUp+render")
             try {
                 engine.keyUp(code)
-                tickAndRender()
+                // If powered off (either we just turned off or we're still
+                // asleep), don't emit a frame — the off-image owns the UI.
+                if (_isPoweredOn.value) tickAndRender()
             } finally {
                 Trace.endSection()
             }
@@ -111,18 +174,27 @@ class CalculatorViewModel(
         Trace.beginSection("c47:tickAndRender")
         try {
             engine.tick()
-            val dirty = engine.renderArgb(argbBuffer, PIXEL_ON_PIX, PIXEL_OFF_PIX)
-            if (dirty && LCD_EMIT_ENABLED) {
-                argbBuffer.rewind()
-                back.copyPixelsFromBuffer(argbBuffer)
-                val newFront = back
-                back = front
-                front = newFront
-                frameVersion++
-                _lcd.value = LcdFrame(front, frameVersion)
-            }
+            emitIfDirty()
         } finally {
             Trace.endSection()
+        }
+    }
+
+    // Read the engine's framebuffer if it's been marked dirty since the
+    // last read, swap buffers, and emit a new LcdFrame. Split out from
+    // tickAndRender so power-on/off transitions (which write directly to
+    // the framebuffer without the engine's involvement) can flush the
+    // off-image to the UI.
+    private fun emitIfDirty() {
+        val dirty = engine.renderArgb(argbBuffer, PIXEL_ON_PIX, PIXEL_OFF_PIX)
+        if (dirty && LCD_EMIT_ENABLED) {
+            argbBuffer.rewind()
+            back.copyPixelsFromBuffer(argbBuffer)
+            val newFront = back
+            back = front
+            front = newFront
+            frameVersion++
+            _lcd.value = LcdFrame(front, frameVersion)
         }
     }
 
@@ -133,7 +205,10 @@ class CalculatorViewModel(
     // ~250ms (TO_CRS_BLINK), everything else is >= 750ms.
     private suspend fun runBackgroundPump() {
         while (engineScope.isActive) {
-            tickAndRender()
+            // While powered off, the off-image owns the framebuffer and the
+            // engine should not be running timers or repainting — skip the
+            // whole pump cycle. The tick resumes as soon as power comes back.
+            if (_isPoweredOn.value) tickAndRender()
             delay(BACKGROUND_PUMP_INTERVAL_MS)
         }
     }
@@ -155,6 +230,10 @@ class CalculatorViewModel(
 
     companion object {
         private const val TAG = "c47-vm"
+
+        // Engine-native flat index for the EXIT key (see INTERACTIVITY_PLAN
+        // key map). Orange-shift + this key is the R47's OFF combo.
+        private const val KEY_EXIT = "32"
 
         // Palette matches CalculatorDisplayView — parchment off, near-black on.
         //

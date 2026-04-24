@@ -36,6 +36,21 @@ class C47Engine {
     fun save() = nativeSave()
     fun restore() = nativeRestore()
 
+    // Paint the persistent off-image into the LCD framebuffer. Matches the
+    // hardware R47's OFF behavior (DMCP's draw_power_off_image). Caller
+    // should stop ticking the engine while powered off.
+    fun powerOff() = nativePowerOff()
+
+    // Restore panel power and force the engine to re-render the current
+    // screen over the off image.
+    fun powerOn() = nativePowerOn()
+
+    // True while the orange shift (f) is armed — i.e. the next keystroke
+    // will be shift-f'd. Read at the moment of the next keystroke so the
+    // UI can detect the f+EXIT = OFF combo without duplicating shift
+    // tracking on the Kotlin side.
+    fun isShiftFArmed(): Boolean = nativeShiftFArmed()
+
     private external fun nativeInit(stateDir: String)
     private external fun nativeKeyDown(key: String)
     private external fun nativeKeyUp(key: String)
@@ -43,4 +58,7 @@ class C47Engine {
     private external fun nativeRenderArgb(buf: ByteBuffer, onArgb: Int, offArgb: Int): Boolean
     private external fun nativeSave()
     private external fun nativeRestore()
+    private external fun nativePowerOff()
+    private external fun nativePowerOn()
+    private external fun nativeShiftFArmed(): Boolean
 }

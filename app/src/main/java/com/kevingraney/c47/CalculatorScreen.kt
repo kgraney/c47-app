@@ -153,10 +153,20 @@ private fun CalcDisplayUnit(vm: CalculatorViewModel? = null) {
 
 @Composable
 private fun CalcDisplay(vm: CalculatorViewModel? = null) {
+    // Long-pressing the display toggles the simulated power state, painting
+    // the persistent off-image the real R47 hardware shows when off. Tap
+    // (or any hardware key) while off restores the live UI. Keyed on `vm`
+    // so the gesture is only installed when we have a real ViewModel.
+    val displayGesture = if (vm != null) {
+        Modifier.pointerInput(vm) {
+            detectTapGestures(onLongPress = { vm.togglePower() })
+        }
+    } else Modifier
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
+            .then(displayGesture)
     ) {
         if (vm != null) {
             // Live engine framebuffer. The ViewModel drives its own tick +
