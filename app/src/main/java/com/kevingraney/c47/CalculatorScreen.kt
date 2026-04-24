@@ -6,9 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,10 +19,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -95,9 +95,10 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 8.dp, vertical = 8.dp)
+                .scaleToFitHeight()
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(22.dp))
                 .background(BodyBg)
                 .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp)
@@ -105,6 +106,36 @@ fun CalculatorScreen(vm: CalculatorViewModel? = null) {
             CalcDisplayUnit(vm)
             Spacer(Modifier.height(10.dp))
             CalcKeyboard(vm)
+        }
+    }
+}
+
+// Measures the child at its natural height (within the given width) and
+// uniformly scales the whole thing down via a graphics layer so it fits the
+// parent's height. Never upscales — if the child already fits, scale = 1.
+// The inset padding + outer 8dp gutter stay outside this modifier so they
+// aren't shrunk along with the content (system bars remain untouched).
+private fun Modifier.scaleToFitHeight(): Modifier = this.layout { measurable, constraints ->
+    val loose = Constraints(
+        minWidth = constraints.minWidth,
+        maxWidth = constraints.maxWidth,
+        minHeight = 0,
+        maxHeight = Constraints.Infinity,
+    )
+    val placeable = measurable.measure(loose)
+    val scale = if (constraints.hasBoundedHeight && placeable.height > constraints.maxHeight) {
+        constraints.maxHeight.toFloat() / placeable.height
+    } else 1f
+    val outW = (placeable.width * scale).toInt()
+        .coerceIn(constraints.minWidth, constraints.maxWidth)
+    val outH = (placeable.height * scale).toInt().coerceAtMost(
+        if (constraints.hasBoundedHeight) constraints.maxHeight else Int.MAX_VALUE
+    )
+    layout(outW, outH) {
+        placeable.placeRelativeWithLayer(0, 0) {
+            scaleX = scale
+            scaleY = scale
+            transformOrigin = TransformOrigin(0f, 0f)
         }
     }
 }
