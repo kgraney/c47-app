@@ -16,6 +16,17 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,  LOG_TAG, __VA_ARGS__)
 
+// Cached JavaVM (set in JNI_OnLoad) plus a global ref to the C47Engine
+// instance and the resolved playToneFromNative method ID. Used by
+// c47_android_play_tone (called from c47-android/hal/audio.c) to bridge
+// audioTone() back into the Kotlin TonePlayer. The engine HAL invokes this
+// from the engine thread, which is already JNI-attached (every entry point
+// is called via JNI from the same Kotlin executor), so AttachCurrentThread
+// is just a safety net.
+static JavaVM*   g_jvm          = nullptr;
+static jobject   g_engineRef    = nullptr;
+static jmethodID g_playToneMid  = nullptr;
+
 // RAII scope for systrace; zero-cost when tracing disabled (ATrace_isEnabled
 // gates the section). Capture with Perfetto to see where engine-thread time
 // goes during key presses vs. idle renders.
@@ -101,6 +112,58 @@ enum {
 #endif // C47_ENGINE_LINKED
 
 extern "C" {
+
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
+    g_jvm = vm;
+    return JNI_VERSION_1_6;
+}
+
+// Called from c47-android/hal/audio.c's audioTone() to play a tone via the
+// Kotlin TonePlayer. Blocks for the tone duration (~250ms) so that fnBeep's
+// four sequential _tonePlay calls don't overlap, matching DMCP semantics.
+void c47_android_play_tone(uint32_t millihertz) {
+    if (g_jvm == nullptr || g_engineRef == nullptr || g_playToneMid == nullptr) {
+        return;
+    }
+    JNIEnv* env = nullptr;
+    bool attached = false;
+    jint res = g_jvm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6);
+    if (res == JNI_EDETACHED) {
+        if (g_jvm->AttachCurrentThread(&env, nullptr) != JNI_OK || env == nullptr) {
+            return;
+        }
+        attached = true;
+    } else if (res != JNI_OK || env == nullptr) {
+        return;
+    }
+    env->CallVoidMethod(g_engineRef, g_playToneMid, static_cast<jint>(millihertz));
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+    if (attached) {
+        g_jvm->DetachCurrentThread();
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_kevingraney_c47_engine_C47Engine_nativeSetTonePlayer(
+        JNIEnv* env, jobject thiz) {
+    if (g_engineRef != nullptr) {
+        env->DeleteGlobalRef(g_engineRef);
+        g_engineRef = nullptr;
+    }
+    g_engineRef = env->NewGlobalRef(thiz);
+    jclass cls = env->GetObjectClass(thiz);
+    g_playToneMid = env->GetMethodID(cls, "playToneFromNative", "(I)V");
+    env->DeleteLocalRef(cls);
+    if (g_playToneMid == nullptr) {
+        LOGW("nativeSetTonePlayer: playToneFromNative method not found");
+    } else {
+        LOGI("nativeSetTonePlayer: tone callback wired");
+    }
+}
 
 JNIEXPORT void JNICALL
 Java_com_kevingraney_c47_engine_C47Engine_nativeInit(

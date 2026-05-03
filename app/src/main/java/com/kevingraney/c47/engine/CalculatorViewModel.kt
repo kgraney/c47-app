@@ -48,6 +48,8 @@ class CalculatorViewModel(
     private val engineDispatcher = engineExecutor.asCoroutineDispatcher()
     private val engineScope = CoroutineScope(SupervisorJob() + engineDispatcher)
 
+    private val tonePlayer = TonePlayer()
+
     // Reused across every frame — no per-tick allocation.
     private val argbBuffer: ByteBuffer = ByteBuffer
         .allocateDirect(C47Engine.FRAMEBUFFER_BYTES * 4)
@@ -79,6 +81,7 @@ class CalculatorViewModel(
     fun init(stateDir: File) {
         engineScope.launch {
             engine.init(stateDir)
+            engine.setTonePlayer(tonePlayer)
             runBackgroundPump()
         }
     }
@@ -218,6 +221,7 @@ class CalculatorViewModel(
     }
 
     fun shutdown() {
+        tonePlayer.shutdown()
         engineScope.cancel()
         engineExecutor.shutdown()
     }

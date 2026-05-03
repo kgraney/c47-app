@@ -1,9 +1,12 @@
 package com.kevingraney.c47.engine
 
+import androidx.annotation.Keep
 import java.io.File
 import java.nio.ByteBuffer
 
 class C47Engine {
+
+    private var tonePlayer: TonePlayer? = null
 
     companion object {
         init {
@@ -51,6 +54,20 @@ class C47Engine {
     // tracking on the Kotlin side.
     fun isShiftFArmed(): Boolean = nativeShiftFArmed()
 
+    // Register the player the engine will route audioTone() calls to. Must
+    // be called before any keystroke that could trigger TONE / BEEP.
+    fun setTonePlayer(player: TonePlayer) {
+        tonePlayer = player
+        nativeSetTonePlayer()
+    }
+
+    // Invoked from the JNI bridge on the engine thread when the C engine
+    // calls audioTone(). Blocks for the tone duration — see TonePlayer.
+    @Keep
+    fun playToneFromNative(millihertz: Int) {
+        tonePlayer?.playTone(millihertz)
+    }
+
     private external fun nativeInit(stateDir: String)
     private external fun nativeKeyDown(key: String)
     private external fun nativeKeyUp(key: String)
@@ -61,4 +78,5 @@ class C47Engine {
     private external fun nativePowerOff()
     private external fun nativePowerOn()
     private external fun nativeShiftFArmed(): Boolean
+    private external fun nativeSetTonePlayer()
 }
